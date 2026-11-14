@@ -578,7 +578,8 @@ nav a.on {
 .it p {
     margin: 2px 0;
     color: #c9c4b8;
-    font-size: 15px
+    font-size: 15px;
+    white-space: pre-line
 }
 
 .it button {
@@ -619,6 +620,65 @@ textarea.ot {
     gap: 8px
 }
 
+.skill-catalog-modal {
+    box-sizing: border-box;
+    width: min(760px, 94vw);
+    height: min(86vh, 840px);
+    max-height: 90vh;
+    overflow: hidden;
+    grid-template-rows: auto minmax(0, 1fr)
+}
+
+.skill-modal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px
+}
+
+.skill-modal-head h3 {
+    margin: 0
+}
+
+.skill-modal-head button {
+    flex: 0 0 42px;
+    min-height: 42px;
+    padding: 0;
+    font-size: 22px
+}
+
+.skill-modal-list {
+    display: grid;
+    align-content: start;
+    gap: 4px;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-right: 4px
+}
+
+.skill-modal-list .cat {
+    margin: 0
+}
+
+.skill-create-modal {
+    box-sizing: border-box;
+    width: min(560px, 94vw);
+    max-height: 90vh
+}
+
+.skill-create-modal input,
+.skill-create-modal textarea {
+    box-sizing: border-box;
+    width: 100%
+}
+
+.skill-create-modal textarea {
+    min-height: 180px;
+    max-height: 55vh;
+    resize: vertical
+}
+
 .cat {
     display: block;
     text-align: left;
@@ -630,7 +690,52 @@ textarea.ot {
 
 .cat small {
     display: block;
-    color: var(--mt)
+    color: var(--mt);
+    white-space: pre-line
+}
+
+@media (max-width: 600px) {
+    .skill-catalog-modal {
+        width: calc(100vw - 20px);
+        height: calc(100vh - 24px);
+        max-height: none;
+        padding: 12px
+    }
+
+    .skill-create-modal {
+        width: calc(100vw - 20px);
+        max-height: calc(100vh - 24px);
+        padding: 12px
+    }
+
+    .skill-create-modal textarea {
+        max-height: 45vh
+    }
+}
+
+@supports (height: 100dvh) {
+    .skill-catalog-modal {
+        height: min(86dvh, 840px);
+        max-height: 90dvh
+    }
+
+    .skill-create-modal {
+        max-height: 90dvh
+    }
+
+    @media (max-width: 600px) {
+        .skill-catalog-modal {
+            height: calc(100dvh - 24px)
+        }
+
+        .skill-create-modal {
+            max-height: calc(100dvh - 24px)
+        }
+
+        .skill-create-modal textarea {
+            max-height: 45dvh
+        }
+    }
 }
 
 .drop {

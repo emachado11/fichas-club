@@ -1,4 +1,4 @@
-import { D, AN, SKILLS, MUNDOS, PERF, CAT, TABN, $, esc, modal, close, act, face, faceKey, picHTML, cropCss, small, load, rd, shrink } from './common.js';
+import { D, AN, SKILLS, MUNDOS, PERF, CAT, TABN, $, esc, modal, close, act, face, faceKey, picHTML, cropCss, small, load, rd, shrink, toast } from './common.js';
 
 /* Tamanho (px) do círculo do editor de enquadramento (estilo Discord) */
 const RING = 260;
@@ -82,6 +82,18 @@ export function mountSheet(root, s, o = {}) {
     }
 
     const dot = (i, j, neg) => upd(s => { const r = s.rel[i], v = neg ? -(j + 1) : j + 1; r.pts = r.pts === v ? (neg ? -j : j) : v });
+    const showCatalog = () => {
+        if (tab === 'hab') {
+            modal(`<div class=skill-modal-head><h3>Habilidades</h3><button class=g data-a=createcustom aria-label="Criar habilidade personalizada" title="Criar habilidade">+</button></div><div class=skill-modal-list>${CAT.hab.map((x, i) => `<button class=cat data-a=addcat data-i=${i}>${x.name}<small>${x.description}</small></button>`).join('')}</div>`);
+            $('#modal .mb').classList.add('skill-catalog-modal');
+            return
+        }
+        modal(`<h3>${TABN[tab]}</h3>${CAT[tab].map((x, i) => `<button class=cat data-a=addcat data-i=${i}>${x.name}<small>${x.description}</small></button>`).join('')}<h3>Criar nova</h3><input id=nn placeholder=Nome><textarea id=nd rows=3 placeholder=Descrição></textarea><button data-a=addnew>Adicionar</button>`)
+    };
+    const showCustomAbilityForm = () => {
+        modal(`<h3>Nova habilidade</h3><input id=nn maxlength=64 placeholder=Nome><textarea id=nd rows=5 placeholder=Descrição></textarea><div class=row><button class=g data-a=backcat>Voltar</button><button data-a=addnew>Adicionar habilidade</button></div>`);
+        $('#modal .mb').classList.add('skill-create-modal')
+    };
     act({
         close: () => { ed = null; close(); render() }, dd: t => t.parentNode.classList.toggle('open'),
         perfil: (t, e) => { if (e.target.closest('i')) return; upd(s => s.perfil = t.dataset.v) },
@@ -93,9 +105,16 @@ export function mountSheet(root, s, o = {}) {
         cur: t => upd(s => { const k = t.dataset.k; s[k] = Math.min(s[k + 'Max'], s[k] + +t.dataset.d) }),
         mundo: t => upd(s => s.mundo = t.dataset.v),
         tab: t => { tab = t.dataset.v; render() }, rm: t => upd(s => s[tab].splice(+t.dataset.i, 1)),
-        cat: () => modal(`<h3>${TABN[tab]}</h3>${CAT[tab].map((x, i) => `<button class=cat data-a=addcat data-i=${i}>${x.name}<small>${x.description}</small></button>`).join('')}<h3>Criar nova</h3><input id=nn placeholder=Nome><textarea id=nd rows=3 placeholder=Descrição></textarea><button data-a=addnew>Adicionar</button>`),
+        cat: showCatalog,
+        createcustom: showCustomAbilityForm,
+        backcat: showCatalog,
         addcat: t => { const x = CAT[tab][+t.dataset.i]; upd(s => s[tab].push({ ...x })); close() },
-        addnew: () => { const name = $('#nn').value.trim(); if (!name) return; upd(s => s[tab].push({ name, description: $('#nd').value })); close() },
+        addnew: () => {
+            const name = $('#nn').value.trim(), description = $('#nd').value.trim();
+            if (!name) return toast('Digite um nome.', 1);
+            if (tab === 'hab' && !description) return toast('Digite a descrição da habilidade.', 1);
+            upd(s => s[tab].push({ name, description })); close()
+        },
         addrel: () => upd(s => s.rel.push({ name: '', img: '', pts: 0 })), rmrel: t => upd(s => s.rel.splice(+t.dataset.i, 1)),
         relph: t => pick(async f => { const u = await small(await rd(f)); upd(s => s.rel[+t.dataset.i].img = u) }),
         photo: () => photo(),
