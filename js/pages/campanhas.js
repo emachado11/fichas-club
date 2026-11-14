@@ -27,7 +27,7 @@ async function deleteCampaign(id, uid) {
 
 guard(u => {
     let all = [], tab = sessionStorage.ctab || 'play';
-    page('Campanhas', `<div class=tabs2 role=tablist><button role=tab data-a=tab data-v=play id=tp>Como jogador</button><button role=tab data-a=tab data-v=master id=tm>Como Mestre</button></div><div id=ls class=crs></div>${fab([{ href: 'campanha-nova.html', label: 'Nova campanha' }])}`, u);
+    page('Campanhas', `<div class=tabs2 role=tablist><button role=tab data-a=tab data-v=play id=tp>Como jogador</button><button role=tab data-a=tab data-v=master id=tm>Como Mestre</button></div><div id=ls class=crs><div class=skel-c></div><div class=skel-c></div></div>${fab([{ href: 'campanha-nova.html', label: 'Nova campanha' }])}`, u);
     const draw = () => {
         const mine = c => c.master === u.uid, P = all.filter(c => !mine(c)), M = all.filter(mine), L = tab == 'master' ? M : P;
         $('#tp').textContent = `Como jogador (${P.length})`; $('#tm').textContent = `Como Mestre (${M.length})`;

@@ -1,7 +1,7 @@
 import { guard, page, act, $, err, toast } from '../common.js';
 import { db, collection, query, where, onSnapshot, deleteDoc, doc } from '../firebase.js';
 import { PRIV, savePriv } from '../profile.js';
-import { fab, sheetCard } from '../ui.js';
+import { fab, sheetCard, skel } from '../ui.js';
 
 const SORTS = { az: 'Ordem alfabética', lvl: 'Nível', perfil: 'Perfil', recent: 'Mais recentes', mine: 'Minha ordem' };
 const PF = ['Todos', 'Executor', 'Analista', 'Vigilante'];
@@ -10,7 +10,7 @@ guard(u => {
     page('Minhas fichas', `<div class=tb><input type=search id=q placeholder="Buscar ficha…" aria-label="Buscar ficha">
    <select id=so aria-label="Ordenar por">${Object.entries(SORTS).map(([k, v]) => `<option value=${k} ${k == st.sort ? 'selected' : ''}>${v}</option>`).join('')}</select>
    <button class=g id=dr data-a=dir title="Inverter ordem"></button></div>
-   <div class="chips tb" id=ch>${PF.map(p => `<button data-a=pf data-v=${p} class="${p == 'Todos' ? 'on' : ''}">${p}</button>`).join('')}</div><div id=gr class=grid></div>${fab([{ href: 'ficha-nova.html', label: 'Nova ficha' }])}`, u);
+   <div class="chips tb" id=ch>${PF.map(p => `<button data-a=pf data-v=${p} class="${p == 'Todos' ? 'on' : ''}">${p}</button>`).join('')}</div><div id=gr class=grid>${skel(6)}</div>${fab([{ href: 'ficha-nova.html', label: 'Nova ficha' }])}`, u);
     const cmp = {
         az: (a, b) => a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' }), lvl: (a, b) => a.nivel - b.nivel || cmp.az(a, b),
         perfil: (a, b) => a.perfil.localeCompare(b.perfil) || cmp.az(a, b), recent: (a, b) => (a.updated?.toMillis?.() || 0) - (b.updated?.toMillis?.() || 0)

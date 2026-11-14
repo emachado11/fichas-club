@@ -11,6 +11,8 @@ document.addEventListener('click', e => {
   if (b) { f.classList.toggle('open'); b.setAttribute('aria-expanded', f.classList.contains('open')) }
 });
 
+/* Esqueleto de carregamento (aparece até os dados chegarem) */
+export const skel = (n = 6) => Array.from({ length: n }, () => '<div class="sc skel" aria-hidden=true><div class=scp></div><div class=scb><b>&nbsp;</b><small>&nbsp;</small><small>&nbsp;</small></div></div>').join('');
 export const sheetCard = (x, o = {}) => {
   const f = face(x);
   return `<a class=sc href="ficha.html?id=${esc(x.id)}" data-p="${esc(x.perfil)}" data-id="${esc(x.id)}" ${o.drag ? 'draggable=true' : ''}>

@@ -1935,3 +1935,56 @@ html[data-theme=light] .login .lg {
 .camphead .chip {
   justify-self: start
 }
+
+/* ===== Ajustes: tablet, toque, desempenho, carregamento ===== */
+html { -webkit-text-size-adjust: 100% }
+/* Ficha em tablet: duas colunas em vez de uma coluna estreita */
+@media (min-width: 641px) and (max-width: 1000px) {
+  .sheet { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 920px }
+  .sheet > :nth-child(3) { grid-column: 2; grid-row: 1 / span 2 }
+  .skl { max-height: 520px }
+}
+@media (max-width: 640px) { .sheet { grid-template-columns: minmax(0, 1fr) } }
+/* Alvos de toque maiores no celular/tablet */
+@media (pointer: coarse) {
+  .at button.s { min-width: 44px; min-height: 40px; font-size: 20px }
+  .st button { min-width: 44px; min-height: 40px }
+  .dot { width: 28px; height: 28px }
+  .dots { gap: 8px }
+  .sk { min-height: 38px }
+  .sk select { min-width: 56px; height: 32px }
+  .dd > button { min-height: 34px }
+  .tabs button, .mundo button { min-height: 40px }
+  .it button { min-width: 36px; min-height: 36px }
+}
+@media (max-width: 760px) { #dbtn { width: 42px; height: 42px; padding: 5px } }
+/* Sem desfoque nos painéis da ficha em telas pequenas (rolagem mais leve) */
+@media (max-width: 1000px), (pointer: coarse) {
+  .sheet .pn { backdrop-filter: none; background: color-mix(in srgb, var(--pn) 90%, transparent) }
+}
+/* Esqueletos de carregamento */
+.skel .scp, .skel b, .skel small, .skel-h, .skel-c {
+  background: linear-gradient(90deg, var(--gb2) 25%, var(--gb) 50%, var(--gb2) 75%) 0 0/200% 100%;
+  animation: skl 1.3s linear infinite; border-radius: 6px; color: transparent
+}
+.skel { pointer-events: none }
+.skel-h { min-height: clamp(240px, 38vw, 380px); border-radius: 14px }
+.skel-c { height: 150px; border-radius: 12px; margin-bottom: 12px }
+@keyframes skl { to { background-position: -200% 0 } }
+@media (prefers-reduced-motion: reduce) { .skel .scp, .skel b, .skel small, .skel-h, .skel-c { animation: none } }
+/* Editor de portrait no celular: a prévia fica fixa no topo enquanto você edita */
+@media (max-width: 1000px) {
+  .pe-main { display: flex; flex-direction: column }
+  .pe-c { order: -1; position: sticky; top: 0; z-index: 6; height: 42vh; min-height: 220px; padding: 12px; border-bottom: 1px solid var(--ln) }
+  .pe-l, .pe-r { overflow: visible }
+}
+@media (min-width: 1001px) { @supports (height: 100dvh) { body.pe-body, body.pe-body #app { height: 100dvh } } }
+@supports (height: 100dvh) { body.pe-body.pe-preview, body.pe-body.pe-preview #app, body.pe-preview .pe-c { height: 100dvh } }
+
+/* Troca de página suave: o cabeçalho e a barra de baixo ficam parados */
+@view-transition { navigation: auto }
+#hdr { view-transition-name: hdr }
+#bnav { view-transition-name: bnav }
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: .15s }
+@media (prefers-reduced-motion: reduce) { @view-transition { navigation: none } }
+.cont { display: grid; gap: 8px; padding-top: 10px; border-top: 1px solid var(--ln) }

@@ -1,5 +1,5 @@
 import { db, addDoc, collection, doc, onSnapshot, updateDoc, writeBatch } from './firebase.js';
-import { esc, err, toast } from './common.js';
+import { esc, err, toast, track } from './common.js';
 
 const BOARD_WIDTH = 5000;
 const BOARD_HEIGHT = 4000;
@@ -67,6 +67,9 @@ export class InvestigationBoard {
         this.activePointers = new Map();
         this.contextMenu = null;
         this.saveTimers = new Map();
+        this.draft = '';
+        this.pending = false;
+        this.vq = 0;
         const collectionName = audience === 'players' ? 'playerInvestigation' : 'investigation';
         this.ref = collection(db, 'campaigns', campaignId, collectionName);
         this.handlers = {
@@ -99,10 +102,11 @@ export class InvestigationBoard {
                 this.setStatus('Conexão cancelada.')
             }
         };
-        document.addEventListener('click', this.handleDocumentClick);
-        document.addEventListener('keydown', this.handleDocumentKeydown);
+        track(document, 'click', this.handleDocumentClick);
+        track(document, 'keydown', this.handleDocumentKeydown);
         this.unsubscribe = onSnapshot(this.ref, snapshot => {
             this.items = snapshot.docs.map(item => ({ id: item.id, ...item.data() }));
+            if (this.gesture) { this.pending = true; return }   // não quebra um arraste em andamento
             this.render()
         }, error => toast(err(error), 1))
     }
@@ -128,6 +132,9 @@ export class InvestigationBoard {
     render() {
         if (!this.root?.isConnected) return;
         this.contextMenu = null;
+        const dr0 = this.root.querySelector('[data-board-draft]');
+        if (dr0) this.draft = dr0.value;
+        const draftFocus = !!dr0 && document.activeElement === dr0;
         const activeInput = document.activeElement?.closest('[data-board-edit]');
         const focusId = activeInput && this.root.contains(activeInput) ? activeInput.dataset.boardEdit : '';
         const selection = activeInput ? [activeInput.selectionStart, activeInput.selectionEnd] : null;
@@ -159,6 +166,8 @@ export class InvestigationBoard {
    ${this.gesture?.kind === 'pan' ? '<span class=board-pan-indicator>Movendo quadro</span>' : ''}
   </div>
  </div>`;
+        const nd = this.root.querySelector('[data-board-draft]');
+        if (nd) { nd.value = this.draft; if (draftFocus) nd.focus({ preventScroll: true }) }
         if (!this.cameraReady) {
             requestAnimationFrame(() => {
                 if (!this.root?.isConnected || !this.viewport) return;
@@ -264,6 +273,7 @@ export class InvestigationBoard {
         const width = 250, height = 170, position = this.centerPosition(width, height);
         await addDoc(this.ref, { type: 'note', text, width, height, ...position });
         const draft = this.root?.querySelector('[data-board-draft]');
+        this.draft = '';
         if (draft) draft.value = ''
     }
 
@@ -357,6 +367,7 @@ export class InvestigationBoard {
     }
 
     handleInput(event) {
+        if (event.target.matches?.('[data-board-draft]')) { this.draft = event.target.value; return }
         const input = event.target.closest('[data-board-edit]');
         if (!input) return;
         const item = this.items.find(value => value.id === input.dataset.boardEdit);
@@ -527,13 +538,13 @@ export class InvestigationBoard {
             if (node && node.namespaceURI !== 'http://www.w3.org/2000/svg') { node.style.left = `${x}px`; node.style.top = `${y}px` }
             const item = this.items.find(value => value.id === gesture.id);
             if (item) { item.x = x; item.y = y }
-            this.renderVectorsIntoWorld();
+            this.queueVectors();
             gesture.x = x; gesture.y = y
         } else if (gesture.kind === 'draw') {
             const point = this.worldPoint(event.clientX, event.clientY);
             const previous = gesture.points[gesture.points.length - 1];
             if (Math.hypot(point.x - previous.x, point.y - previous.y) >= 2) gesture.points.push(point);
-            this.renderVectorsIntoWorld()
+            this.queueVectors()
         }
     }
 
@@ -556,6 +567,7 @@ export class InvestigationBoard {
         this.gesture = null;
         this.viewport?.classList.remove('is-panning');
         this.renderVectorsIntoWorld();
+        setTimeout(() => { if (this.pending && !this.gesture) { this.pending = false; this.render() } }, 0);
         if (gesture.kind === 'node') {
             const item = this.items.find(value => value.id === gesture.id);
             if (item) { item.x = gesture.x; item.y = gesture.y }
@@ -607,7 +619,14 @@ export class InvestigationBoard {
         }
         this.gesture = null;
         this.viewport?.classList.remove('is-panning');
-        this.renderVectorsIntoWorld()
+        this.renderVectorsIntoWorld();
+        setTimeout(() => { if (this.pending && !this.gesture) { this.pending = false; this.render() } }, 0)
+    }
+
+    /* no máximo um redesenho das linhas por quadro de animação (arrastar fica fluido) */
+    queueVectors() {
+        if (this.vq) return;
+        this.vq = requestAnimationFrame(() => { this.vq = 0; this.renderVectorsIntoWorld() })
     }
 
     renderVectorsIntoWorld() {

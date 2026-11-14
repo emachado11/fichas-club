@@ -1,5 +1,5 @@
 /* Perfil: foto, nomes, @usuário, aparência, conta e amigos */
-import { guard, page, act, $, esc, toast, err, clip, modal, close } from '../common.js';
+import { track, guard, page, act, $, esc, toast, err, clip, modal, close } from '../common.js';
 import { auth, db, doc, writeBatch, getDoc, getDocs, collection, query, where, deleteField, arrayRemove, updatePassword, verifyBeforeUpdateEmail, reauthenticateWithCredential, reauthenticateWithPopup, deleteUser, GoogleAuthProvider, EmailAuthProvider, sendPasswordResetEmail } from '../firebase.js';
 import { ME, setMe, savePriv, applyTheme, applyPalette, MODES, PALETTES, isEntityThemeUnlocked, clean, validHandle, findUser, sendFriendRequest, answerFriendRequest, removeFriend, watchFriends, watchFriendRequests, avatar, getProfile } from '../profile.js';
 import { pickImage, openCropper } from '../cropper.js';
@@ -89,10 +89,10 @@ guard(u => {
         <div class=pn><b class=cz>Meus amigos (${friends.length})</b>${friends.map(p => `<div class=frow><span class=who>${avatar(p, 'sm')}<span class=mn><b>${esc(p.displayName)}</b><small>@${esc(p.username)}</small></span></span><button class=g data-a=rmfr data-u="${esc(p.uid)}" aria-label="Remover ${esc(p.displayName)}">Remover</button></div>`).join('') || '<p class=hint>Você ainda não tem amigos adicionados.</p>'}</div>`
     }; $('#pb').innerHTML = T[tab] || T.perfil
   };
-  addEventListener('club-theme-unlocked', () => { if (tab === 'aparencia') draw() });
+  track(window, 'club-theme-unlocked', () => { if (tab === 'aparencia') draw() });
   draw(); watchFriends(u.uid, f => { friends = f; if (tab == 'amigos') { const k = $('#fq')?.value; draw(); if (k && $('#fq')) $('#fq').value = k } });
   watchFriendRequests(u.uid, r => { friendRequests = r; if (tab == 'amigos') { const k = $('#fq')?.value; draw(); if (k && $('#fq')) $('#fq').value = k } });
-  addEventListener('hashchange', () => { tab = location.hash.slice(1) || 'perfil'; if (tab === 'conta') { tab = 'perfil'; history.replaceState(null, '', '#perfil') } draw() });
+  track(window, 'hashchange', () => { tab = location.hash.slice(1) || 'perfil'; if (tab === 'conta') { tab = 'perfil'; history.replaceState(null, '', '#perfil') } draw() });
   /* link de amizade: perfil.html?add=<uid> */
   const add = new URLSearchParams(location.search).get('add');
   if (add && add !== u.uid) getProfile(add).then(p => { tab = 'amigos'; draw(); modal(`<h3>Solicitar amizade</h3><div class=row style="justify-content:flex-start">${avatar(p)}<span class=mn><b>${esc(p.displayName)}</b><small>@${esc(p.username)}</small></span></div><div class=row><button data-a=okadd data-u="${esc(add)}">Enviar solicitação</button><button class=g data-a=close>Cancelar</button></div>`) });

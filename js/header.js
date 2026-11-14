@@ -1,6 +1,7 @@
 /* Cabeçalho do site: logo, navegação, amigos, convites e perfil. */
-import { ME, avatar, unlockEntityTheme, watchFriends, watchFriendRequests, watchInvites, answerFriendRequest, answerInvite } from './profile.js';
+import { ME, setMe, avatar, unlockEntityTheme, watchFriends, watchFriendRequests, watchInvites, answerFriendRequest, answerInvite } from './profile.js';
 import { esc, toast, err } from './common.js';
+import { scope } from './firebase.js';
 
 const IC = {
   home: '<svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10"/></svg>',
@@ -111,10 +112,10 @@ function handleLogoClick(event) {
   showTimeo()
 }
 
-export function mountHeader(u) {
+export function mountHeader(u, opt = {}) {
   let h = document.getElementById('hdr');
   if (!h) { h = document.createElement('header'); h.id = 'hdr'; document.getElementById('app').before(h) }
-  if (mounted === u?.uid && h.firstChild) return; mounted = u?.uid; unsubs.forEach(f => f()); unsubs = [];
+  if (mounted === u?.uid && h.firstChild) return; mounted = opt.shell ? null : u?.uid; unsubs.forEach(f => f()); unsubs = [];
   let bn = document.getElementById('bnav'); if (!bn) { bn = document.createElement('nav'); bn.id = 'bnav'; document.body.append(bn) }
   bn.innerHTML = NAV.map(([href, t, k]) => `<a href=${href} class="${isOn(k) ? 'on' : ''}">${IC[k]}<span>${t}</span></a>`).join('');
   h.innerHTML = `<div class=hin>
@@ -135,7 +136,9 @@ export function mountHeader(u) {
   };
   document.addEventListener('click', e => { if (!e.target.closest('#hdr .hd')) h.querySelectorAll('.hd.open').forEach(x => x.classList.remove('open')) });
   addEventListener('keydown', e => { if (e.key === 'Escape') h.querySelectorAll('.hd.open').forEach(x => x.classList.remove('open')) });
-  if (!u) return;
+  if (!u || opt.shell) return;
+  let fstarted = false;
+  const startFriends = () => { if (fstarted) return; fstarted = true; scope.global = true;
   unsubs.push(watchFriends(u.uid, L => {
     document.getElementById('hfriends').innerHTML = L.length ? L.map(p => `<div class=mi>${avatar(p)}<span class=mn><b>${esc(p.displayName)}</b><small>@${esc(p.username)}</small></span></div>`).join('') : '<p class=mt>Nenhum amigo ainda. Adicione pelo @, e-mail ou link em Perfil › Amigos.</p>'
   }));
@@ -144,11 +147,17 @@ export function mountHeader(u) {
     const sent = L.outgoing.length ? L.outgoing.map(r => `<div class=frow><span class=who>${avatar(r.toProfile)}<span class=mn><b>${esc(r.toProfile?.displayName || 'Agente')}</b><small>@${esc(r.toProfile?.username || '')}</small></span></span><button class=g data-fr=cancel data-id="${esc(r.id)}" data-from="${esc(r.from)}" data-to="${esc(r.to)}">Cancelar</button></div>`).join('') : '<p class=mt>Nenhum pedido enviado.</p>';
     document.getElementById('hrequests').innerHTML = `<b class=mt>Recebidos</b>${received}<b class=mt>Enviados</b>${sent}`
   }));
+  scope.global = false;
+  };
+  setTimeout(startFriends, 2500);
+  h.querySelector('[data-hd=fr]')?.addEventListener('click', startFriends);
+  scope.global = true;
   unsubs.push(watchInvites(u.uid, L => {
     const b = document.getElementById('hbd'); b.hidden = !L.length; b.textContent = L.length;
     L.forEach(i => i._t = i.id);
     document.getElementById('hinv').innerHTML = L.length ? L.map(i => `<div class=iv><div class=ivb style="${i.thumb ? `background-image:url('${esc(i.thumb)}')` : ''}"></div><div class=ivt><b>${esc(i.campaignName)}</b><small>de @${esc(i.fromProfile?.username || '?')}</small><span class=row><button data-inv=1 data-id="${esc(i.id)}" data-c="${esc(i.campaign)}">Aceitar</button><button class=g data-inv=0 data-id="${esc(i.id)}" data-c="${esc(i.campaign)}">Recusar</button></span></div></div>`).join('') : '<p class=mt>Nenhum convite pendente.</p>'
   }));
+  scope.global = false
 }
 async function answer(b, u) {
   const ok = b.dataset.inv == '1'; b.disabled = true;
@@ -165,3 +174,19 @@ async function answerFriend(b, u) {
 }
 
 export const refreshAvatar = () => { const a = document.querySelector('#hdr .hp'); if (a) a.innerHTML = avatar(ME) };
+addEventListener('club-profile', () => refreshAvatar());
+
+/* Cabeçalho imediato (sem esperar o login): usa o perfil salvo no aparelho, então trocar de página não pisca. */
+export function earlyHeader() {
+  try {
+    const uid = localStorage.getItem('club-in'); if (!uid || uid === '1') return;
+    const c = JSON.parse(localStorage.getItem('club-prof-' + uid) || 'null'); if (!c?.me) return;
+    setMe({ uid, ...c.me }); mountHeader({ uid, email: '' }, { shell: true })
+  } catch { }
+}
+
+/* Atualiza o destaque do menu quando a página muda sem recarregar. */
+export function syncNav() {
+  document.querySelectorAll('#hdr .hnav a, #bnav a').forEach(a => { const k = NAV.find(n => n[0] === a.getAttribute('href'))?.[2]; a.classList.toggle('on', !!k && isOn(k)) });
+  document.querySelector('#hdr .hp')?.classList.toggle('on', /perfil/.test(location.pathname))
+}

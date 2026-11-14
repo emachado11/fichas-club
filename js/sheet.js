@@ -1,4 +1,4 @@
-import { D, AN, SKILLS, MUNDOS, PERF, CAT, TABN, $, esc, modal, close, act, face, faceKey, picHTML, cropCss, small, load, rd, shrink, toast } from './common.js';
+import { track, D, AN, SKILLS, MUNDOS, PERF, CAT, TABN, $, esc, modal, close, act, face, faceKey, picHTML, cropCss, small, load, rd, shrink, toast } from './common.js';
 
 /* Tamanho (px) do círculo do editor de enquadramento (estilo Discord) */
 const RING = 260;
@@ -128,28 +128,28 @@ export function mountSheet(root, s, o = {}) {
         stfile: t => pick(async f => { try { const { data } = await newImg(await rd(f)); upd(s => s.img[t.dataset.k] = data, false); photo(true) } catch { alert('Não foi possível abrir a imagem') } }),
         strm: t => { upd(s => delete s.img[t.dataset.k], false); photo(true) }
     });
-    document.addEventListener('click', e => {
+    track(document, 'click', e => {
         if (!e.target.closest('.dd')) document.querySelectorAll('.dd.open').forEach(d => d.classList.remove('open'));
         const d = e.target.closest('[data-dot]'); if (d && !lp) { const [i, j] = d.dataset.dot.split(':').map(Number); dot(i, j, false) }
     });
-    document.addEventListener('contextmenu', e => { const d = e.target.closest('[data-dot]'); if (!d) return; e.preventDefault(); const [i, j] = d.dataset.dot.split(':').map(Number); dot(i, j, true) });
-    document.addEventListener('pointerdown', e => {
+    track(document, 'contextmenu', e => { const d = e.target.closest('[data-dot]'); if (!d) return; e.preventDefault(); const [i, j] = d.dataset.dot.split(':').map(Number); dot(i, j, true) });
+    track(document, 'pointerdown', e => {
         const d = e.target.closest('[data-dot]'); lp = 0; if (!d || e.pointerType === 'mouse') return;
         lt = setTimeout(() => { lp = 1; const [i, j] = d.dataset.dot.split(':').map(Number); dot(i, j, true) }, 450)
     });
-    document.addEventListener('pointerup', () => { clearTimeout(lt); setTimeout(() => lp = 0, 50) });
-    document.addEventListener('input', e => {
+    track(document, 'pointerup', () => { clearTimeout(lt); setTimeout(() => lp = 0, 50) });
+    track(document, 'input', e => {
         const t = e.target;
         if (t.dataset.k && t.dataset.k != 'nivel') { s[t.dataset.k] = t.value; save() }
         if (t.dataset.r) { s.rel[+t.dataset.r].name = t.value; save() }
         if (t.dataset.img) { if (t.value.trim()) s.img[t.dataset.img] = t.value.trim(); else delete s.img[t.dataset.img]; save() }
     });
-    document.addEventListener('change', e => {
+    track(document, 'change', e => {
         const t = e.target;
         if (t.dataset.k == 'nivel') upd(s => s.nivel = +t.value, false);
         if (t.dataset.sk !== undefined) upd(s => s.sk[t.dataset.sk] = +t.value, false)
     });
-    document.addEventListener('focusout', e => {
+    track(document, 'focusout', e => {
         const t = e.target, k = t.dataset?.ce;
         if (!k) { if (later) { later = false; setTimeout(() => { const a = document.activeElement; if (!(a && root.contains(a) && a.matches('input,textarea,[contenteditable]'))) render(); else later = true }, 0) } return }
         later = false;
@@ -158,6 +158,6 @@ export function mountSheet(root, s, o = {}) {
             if (k.endsWith('Max')) { const b = k.slice(0, 2); s[k] = Math.max(1, v); s[b] = Math.min(s[b], s[k]) } else s[k] = Math.min(v, s[k + 'Max'])
         })
     });
-    document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.dataset?.ce) { e.preventDefault(); e.target.blur() } });
+    track(document, 'keydown', e => { if (e.key === 'Enter' && e.target.dataset?.ce) { e.preventDefault(); e.target.blur() } });
     render(); return { render, refresh, upd };
 }

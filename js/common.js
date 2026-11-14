@@ -1,15 +1,19 @@
-import { auth, onAuthStateChanged, signOut } from './firebase.js';
+import { auth, onAuthStateChanged, signOut, scope } from './firebase.js';
 import { initDice } from './dice.js';
 import { ensureProfile } from './profile.js';
-import { mountHeader } from './header.js';
+import { mountHeader, earlyHeader, syncNav } from './header.js';
+/* Listeners da página atual: são removidos ao trocar de página sem recarregar. */
+const _off = [];
+export const track = (t, type, fn, o) => { t.addEventListener(type, fn, o); _off.push(() => t.removeEventListener(type, fn, o)) };
 export const $ = s => document.querySelector(s);
 export const esc = t => String(t ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 export const qs = k => new URLSearchParams(location.search).get(k);
 const AUTOCOMPLETE_FIELDS = 'input:not([type]),input[type=text],input[type=search],input[type=email],input[type=url],input[type=tel],input[type=number],textarea';
 const disableAutocomplete = node => {
   if (node.nodeType !== 1) return;
-  if (node.matches(AUTOCOMPLETE_FIELDS)) node.setAttribute('autocomplete', 'off');
-  node.querySelectorAll(AUTOCOMPLETE_FIELDS).forEach(field => field.setAttribute('autocomplete', 'off'))
+  const off = field => { if (!field.hasAttribute('autocomplete')) field.setAttribute('autocomplete', 'off') };   // respeita campos que pedem autopreenchimento (login)
+  if (node.matches(AUTOCOMPLETE_FIELDS)) off(node);
+  node.querySelectorAll(AUTOCOMPLETE_FIELDS).forEach(off)
 };
 disableAutocomplete(document.documentElement);
 new MutationObserver(records => records.forEach(record => record.addedNodes.forEach(disableAutocomplete)))
@@ -122,15 +126,18 @@ export const modal = h => { $('#modal').innerHTML = `<div class=mb>${h}</div>`; 
 export const close = () => $('#modal').classList.remove('on');
 export const clip = (s, m) => navigator.clipboard.writeText(s).then(() => toast(m));
 export const err = e => e?.code === 'permission-denied' || /permissions/i.test(e?.message || '') ? 'O Firestore negou a permissão para esta ação.' : (e?.code || e?.message || String(e));
-export const guard = cb => onAuthStateChanged(auth, async u => { if (u) { try { await ensureProfile(u) } catch { } cb(u) } else { sessionStorage.next = location.href; location.href = 'index.html' } });
+export const guard = cb => { const un = onAuthStateChanged(auth, async u => {
+  if (u) { try { localStorage.setItem('club-in', u.uid) } catch { } try { await ensureProfile(u) } catch { } cb(u) }
+  else { try { localStorage.removeItem('club-in') } catch { } sessionStorage.next = location.href; location.href = 'index.html' }
+}); _off.push(un); return un };
 export function page(title, html, u) {
   document.title = title ? `${title} | The Club` : 'The Club';
   initDice(); mountHeader(u);
   $('#app').innerHTML = `<div class=wrap>${title ? `<h2 class=pt>${title}</h2>` : ''}${html}</div>`
 }
 export function act(map) {
-  const m = { close, out: () => signOut(auth).then(() => location.href = 'index.html'), ...map };
-  document.addEventListener('click', async e => {
+  const m = { close, out: () => signOut(auth).then(() => { try { localStorage.removeItem('club-in') } catch { } location.href = 'index.html' }), ...map };
+  track(document, 'click', async e => {
     if (e.target.id === 'modal') m.close(); const t = e.target.closest('[data-a]'); if (!t || !m[t.dataset.a]) return;
     try { await m[t.dataset.a](t, e) } catch (x) { toast(err(x), 1) }
   })
@@ -171,4 +178,36 @@ export function shrink(im, src, max = 512) {
     if (out.startsWith('data:image/png') && max > 384) out = jpg(draw(384), .85);   // PNG é pesado: reduz mais para caber no limite de 1 MB da ficha
     return out
   } catch { return src }
+}
+/* Páginas internas: desenha o cabeçalho na hora. */
+if (document.getElementById('app') && !/(^|\/)(index|obs|portrait|portrait-editor)(\.html)?$|\/$/.test(location.pathname)) earlyHeader();
+
+/* ===== Troca de página sem recarregar: o cabeçalho (e tudo fora do conteúdo) fica no lugar =====
+   Usa a Navigation API (Chrome/Edge/Safari recentes). Em navegadores sem ela, as páginas carregam normalmente. */
+const ROUTES = new Set(['painel', 'fichas', 'ficha', 'ficha-nova', 'campanhas', 'campanha', 'campanha-nova', 'convite', 'perfil']);
+const routeOf = u => { const n = (u.pathname.split('/').pop() || '').replace(/\.html$/, ''); return ROUTES.has(n) ? n : null };
+function cleanupPage() {
+  _off.splice(0).forEach(f => { try { f() } catch { } });
+  scope.unsubs.splice(0).forEach(f => { try { f() } catch { } });
+  document.querySelectorAll('.ctx-menu').forEach(e => e.remove());
+  close(); delete document.body.dataset.p; const t = $('#toast'); if (t) t.style.display = 'none'
+}
+let hard = false, hops = 0;
+if (window.navigation && document.getElementById('app')) {
+  navigation.addEventListener('navigate', e => {
+    if (hard || !e.canIntercept || e.hashChange || e.downloadRequest || e.formData) return;
+    const to = new URL(e.destination.url); if (to.origin !== location.origin) return;
+    const from = routeOf(location), next = routeOf(to); if (!from || !next) return;   // só entre as páginas com cabeçalho
+    e.intercept({
+      scroll: 'manual',
+      async handler() {
+        try {
+          const f = window.flushSheet; window.flushSheet = null; await f?.();   // grava edições pendentes da ficha
+          cleanupPage(); syncNav(); scrollTo(0, 0);
+          $('#app').innerHTML = '<div class=wrap><div class=skel-h style="min-height:160px"></div></div>';
+          await import(`./pages/${next}.js?r=${++hops}`)
+        } catch (x) { console.warn('Navegação suave falhou; carregando a página normalmente.', x); hard = true; location.href = to.href }
+      }
+    })
+  })
 }

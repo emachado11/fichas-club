@@ -39,4 +39,6 @@ export function initDice() {
     }, 60)
   }
   draw();
+  document.addEventListener('click', e => { if (open && !w.contains(e.target)) { open = false; draw() } });
+  addEventListener('keydown', e => { if (e.key === 'Escape' && open) { open = false; draw() } });
 }

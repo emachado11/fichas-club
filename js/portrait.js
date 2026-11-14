@@ -3,10 +3,13 @@ import { faceKey, cropCss } from './common.js';
 
 export const FONTS = ['Cinzel', 'Crimson Pro', 'Orbitron', 'Rajdhani', 'Bebas Neue', 'Oswald', 'Playfair Display', 'Special Elite', 'Share Tech Mono', 'VT323', 'Press Start 2P', 'Metal Mania', 'Creepster', 'IM Fell English', 'Inter'];
 const ONE = ['Bebas Neue', 'Special Elite', 'VT323', 'Press Start 2P', 'Metal Mania', 'Creepster', 'IM Fell English']; // fontes de um único peso
-export function loadFonts() {
-    if (document.getElementById('pg-fonts')) return;
-    const l = document.createElement('link'); l.id = 'pg-fonts'; l.rel = 'stylesheet';
-    l.href = 'https://fonts.googleapis.com/css2?' + FONTS.map(f => 'family=' + f.replace(/ /g, '+') + (ONE.includes(f) ? '' : ':wght@400;500;700')).join('&') + '&display=swap';
+const loadedFonts = new Set();
+/* Carrega só as fontes pedidas (o OBS usa apenas as do layout; o editor carrega todas para a lista). */
+export function loadFonts(list = FONTS) {
+    const need = list.filter(f => FONTS.includes(f) && !loadedFonts.has(f)); if (!need.length) return;
+    need.forEach(f => loadedFonts.add(f));
+    const l = document.createElement('link'); l.rel = 'stylesheet';
+    l.href = 'https://fonts.googleapis.com/css2?' + need.map(f => 'family=' + f.replace(/ /g, '+') + (ONE.includes(f) ? '' : ':wght@400;500;700')).join('&') + '&display=swap';
     document.head.append(l)
 }
 
@@ -104,7 +107,7 @@ const rgba = (h, a = 1) => { h = String(h || '#000').replace('#', ''); if (h.len
 
 /* ---------- renderizador ---------- */
 export function createPortrait(root, opt = {}) {
-    css(); loadFonts();
+    css(); if (opt.allFonts) loadFonts();
     let L = mergeLayout(), D = null, N = {}, hitT = {};
     const place = (w, e) => { w.style.cssText = `left:${e.x}px;top:${e.y}px;width:${e.w}px;height:${e.h}px;z-index:${e.z};opacity:${e.opacity};transform:rotate(${e.rot}deg)` };
     function effects(w, f) {
@@ -165,7 +168,7 @@ export function createPortrait(root, opt = {}) {
     }
     return {
         get layout() { return L },
-        setLayout(l) { L = mergeLayout(l); build() },
+        setLayout(l) { L = mergeLayout(l); if (!opt.allFonts) loadFonts([...new Set(Object.values(L.el).map(e => e.font).filter(Boolean))]); build() },
         setData(d) { const p = D; D = d; patch(p) },
         /* só reposiciona um elemento (usado ao arrastar, sem recriar o DOM) */
         move(id, el) { const n = N[id]; if (n) place(n.w, el || L.el[id]) }

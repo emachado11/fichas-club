@@ -1,7 +1,7 @@
-import { guard, page, act, qs, $, clip, toast, blank, migrate, err, esc, modal } from '../common.js';
+import { track, guard, page, act, qs, $, clip, toast, blank, migrate, err, esc, modal } from '../common.js';
 import { db, doc, getDoc, onSnapshot, updateDoc, serverTimestamp } from '../firebase.js';
 import { mountSheet } from '../sheet.js';
-import { clone } from '../portrait.js';
+const clone = o => JSON.parse(JSON.stringify(o));
 import { trackSheet } from '../profile.js';
 const id = qs('id'), demo = qs('demo');
 const SKIP = new Set(['updated', 'owner']);
@@ -18,7 +18,7 @@ async function canAccessSheet(sheet, uid) {
 
 async function start(u) {
     S = blank();
-    page(demo ? 'Ficha (demo, nada é salvo)' : 'Ficha', `<div class=row style="margin-bottom:10px"><a class="btn g" href="${demo ? 'index.html' : qs('c') ? 'campanha.html?id=' + qs('c') : 'fichas.html'}">← Voltar</a>${demo ? '' : '<button class=g data-a=obs>Copiar link do OBS</button><button class="g gear" data-a=obscfg title="Configurar portrait do OBS" aria-label="Configurar portrait do OBS">⚙</button><span id=sv class=mt></span>'}</div><div id=sh></div>`, u);
+    page(demo ? 'Ficha (demo, nada é salvo)' : 'Ficha', `<div class=row style="margin-bottom:10px;justify-content:flex-start"><a class="btn g" href="${demo ? 'index.html' : qs('c') ? 'campanha.html?id=' + qs('c') : 'fichas.html'}">← Voltar</a>${demo ? '' : '<button class=g data-a=obs>Copiar link do OBS</button><button class="g gear" data-a=obscfg title="Configurar portrait do OBS" aria-label="Configurar portrait do OBS">⚙</button><span id=sv class=mt></span>'}</div><div id=sh></div>`, u);
     if (demo) { M = mountSheet($('#sh'), S, {}); return }
 
     const ref = doc(db, 'sheets', id), server = {};   // server[k] = último valor conhecido no servidor (texto estável)
@@ -64,7 +64,7 @@ async function start(u) {
     }, x => { if (first) { first = false; no(x) } else toast(err(x), 1) }));
     if (dead) return;
     M = mountSheet($('#sh'), S, { onSave: queue });
-    addEventListener('pagehide', flush); document.addEventListener('visibilitychange', () => document.hidden && flush());
+    track(window, 'pagehide', flush); track(document, 'visibilitychange', () => document.hidden && flush());
     window.flushSheet = flush
 }
 

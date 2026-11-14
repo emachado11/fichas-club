@@ -2,6 +2,7 @@
 import { db, doc, getDoc, setDoc, updateDoc, deleteDoc, collection, query, where, getDocs, onSnapshot, writeBatch, serverTimestamp, arrayUnion } from './firebase.js';
 
 const cache = {};
+let ready = false;
 export let ME = null, PRIV = {};
 export const clean = h => String(h || '').trim().replace(/^@/, '').toLowerCase();
 export const validHandle = h => /^[a-z0-9_.]{3,20}$/.test(h);
@@ -18,10 +19,35 @@ export const isEntityThemeUnlocked = () => {
 export const applyTheme = t => { t = MODES[t] ? t : 'dark'; document.documentElement.dataset.theme = t; try { localStorage.theme = t } catch { } };
 export const applyPalette = p => { p = PALETTES[p] ? p : 'executor'; document.documentElement.dataset.palette = p; try { localStorage.palette = p } catch { } };
 
-/* Garante que o usuário tenha perfil (cria @ automático na primeira vez) e carrega as preferências privadas. */
+/* Garante que o usuário tenha perfil (cria @ automático na primeira vez) e carrega as preferências privadas.
+   Se já houver uma cópia salva neste aparelho, a página abre imediatamente e os dados são atualizados em segundo plano. */
 export async function ensureProfile(u) {
-  const ref = doc(db, 'profiles', u.uid), eh = u.email ? await sha(u.email) : '';
-  let d = await getDoc(ref).catch(() => null);
+  if (ready && ME?.uid === u.uid) return ME;   // já carregado nesta sessão (troca de página sem recarregar)
+  let c = null; try { c = JSON.parse(localStorage.getItem('club-prof-' + u.uid) || 'null') } catch { }
+  if (c?.me) {
+    ME = { uid: u.uid, ...c.me }; cache[u.uid] = ME; PRIV = c.priv || {}; applyPrefs(u); ready = true;
+    loadProfile(u).then(() => dispatchEvent(new Event('club-profile'))).catch(() => { });
+    return ME
+  }
+  return loadProfile(u)
+}
+function applyPrefs(u) {
+  const localPrefs = {};
+  try { localPrefs.theme = localStorage.theme; localPrefs.palette = localStorage.palette } catch { }
+  const syncPrefs = {};
+  if (MODES[localPrefs.theme]) {
+    applyTheme(localPrefs.theme);
+    if (PRIV.theme !== localPrefs.theme) syncPrefs.theme = localPrefs.theme
+  } else if (PRIV.theme) applyTheme(PRIV.theme);
+  if (PALETTES[localPrefs.palette]) {
+    applyPalette(localPrefs.palette);
+    if (PRIV.palette !== localPrefs.palette) syncPrefs.palette = localPrefs.palette
+  } else if (PRIV.palette) applyPalette(PRIV.palette);
+  if (Object.keys(syncPrefs).length) savePriv(u.uid, syncPrefs).catch(() => { })
+}
+async function loadProfile(u) {
+  const ref = doc(db, 'profiles', u.uid);
+  const [d, eh, pu] = await Promise.all([getDoc(ref).catch(() => null), u.email ? sha(u.email) : '', getDoc(doc(db, 'users', u.uid)).catch(() => null)]);
   if (d && d.exists()) { ME = { uid: u.uid, ...d.data() }; if (eh && ME.emailHash !== eh) { ME.emailHash = eh; updateDoc(ref, { emailHash: eh }).catch(() => { }) } }
   else if (d) {
     let base = clean((u.email || 'agente').split('@')[0]).replace(/[^a-z0-9_.]/g, '').slice(0, 14); if (base.length < 3) base = (base + 'agente').slice(0, 14);
@@ -35,19 +61,10 @@ export async function ensureProfile(u) {
     }
   }
   if (ME) cache[u.uid] = ME;
-  try { const p = await getDoc(doc(db, 'users', u.uid)); PRIV = p.exists() ? p.data() : {} } catch { PRIV = {} }
-  const localPrefs = {};
-  try { localPrefs.theme = localStorage.theme; localPrefs.palette = localStorage.palette } catch { }
-  const syncPrefs = {};
-  if (MODES[localPrefs.theme]) {
-    applyTheme(localPrefs.theme);
-    if (PRIV.theme !== localPrefs.theme) syncPrefs.theme = localPrefs.theme
-  } else if (PRIV.theme) applyTheme(PRIV.theme);
-  if (PALETTES[localPrefs.palette]) {
-    applyPalette(localPrefs.palette);
-    if (PRIV.palette !== localPrefs.palette) syncPrefs.palette = localPrefs.palette
-  } else if (PRIV.palette) applyPalette(PRIV.palette);
-  if (Object.keys(syncPrefs).length) savePriv(u.uid, syncPrefs).catch(() => { });
+  PRIV = pu && pu.exists() ? pu.data() : {};
+  applyPrefs(u);
+  try { localStorage.setItem('club-prof-' + u.uid, JSON.stringify({ me: ME, priv: PRIV })) } catch { }
+  ready = true;
   return ME
 }
 export const setMe = p => { ME = { ...ME, ...p }; cache[ME.uid] = ME };

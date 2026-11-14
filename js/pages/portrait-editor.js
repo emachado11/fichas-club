@@ -47,7 +47,7 @@ async function boot(u) {
   ${usingCamp ? '<div class=pe-warn>Esta ficha está usando o portrait da campanha. Para este layout aparecer no OBS, desmarque “Usar portrait da campanha” na engrenagem ⚙ da ficha.</div>' : ''}
   <div class=pe-main><aside class=pe-l><h4>Elementos</h4><div id=els></div><h4>Pré-visualização</h4><div id=prev></div></aside>
   <main id=wrap class=pe-c><div id=sz class=pe-sz><div id=stage class="pe-stage chk"><div id=pv></div><div id=ov></div></div></div></main><aside id=insp class=pe-r></aside></div>`;
-    const pg = createPortrait($('#pv')); pg.setLayout(L);
+    const pg = createPortrait($('#pv'), { allFonts: true }); pg.setLayout(L);
 
     /* ---------- dados de exemplo ---------- */
     const srcSheet = () => sheets.find(x => x.id === pd.src);
@@ -177,6 +177,7 @@ async function boot(u) {
     $('#preset').onchange = () => { const v = $('#preset').value; if (!v) return; const [w, h] = v == '2k' ? [2560, 1440] : [1920, 1080]; L.w = w; L.h = h; $('#cw').value = w; $('#ch').value = h; pg.setLayout(L); drawOv(); fit(); commit() };
     $('#bgm').onchange = () => { $('#stage').className = 'pe-stage ' + $('#bgm').value };
     $('#zoom').onchange = fit; addEventListener('resize', fit);
+    new ResizeObserver(() => fit()).observe($('#wrap'));   // reajusta a prévia quando o layout muda (celular/rotação)
     const setL = x => { L = mergeLayout(x); syncPreset(); $('#cw').value = L.w; $('#ch').value = L.h; if (!L.el[sel]) sel = 'portrait'; rebuild(); fit(); drawEls(); drawInsp() };
     const A = {
         mode: t => setMode(t.dataset.v),

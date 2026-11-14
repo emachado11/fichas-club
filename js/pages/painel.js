@@ -2,11 +2,11 @@
 import { guard, page, esc, $ } from '../common.js';
 import { db, doc, getDoc, getDocs, collection, query, where } from '../firebase.js';
 import { PRIV } from '../profile.js';
-import { fab, sheetCard } from '../ui.js';
+import { fab, sheetCard, skel } from '../ui.js';
 
 const ms = x => x?.updated?.toMillis?.() || 0;
 guard(async u => {
-    page('', `<div id=hero></div><div class=sec><h3>Fichas recentes</h3><a href=fichas.html>Ver todas</a></div><div id=rec class=grid></div>${fab([{ href: 'ficha-nova.html', label: 'Criar Ficha' }, { href: 'campanha-nova.html', label: 'Criar Campanha' }])}`, u);
+    page('', `<div id=hero><div class=skel-h></div></div><div class=sec><h3>Fichas recentes</h3><a href=fichas.html>Ver todas</a></div><div id=rec class=grid>${skel(3)}</div>${fab([{ href: 'ficha-nova.html', label: 'Criar Ficha' }, { href: 'campanha-nova.html', label: 'Criar Campanha' }])}`, u);
     const camp = async () => {
         if (PRIV.lastCampaign) { try { const d = await getDoc(doc(db, 'campaigns', PRIV.lastCampaign)); if (d.exists() && (d.data().members || []).includes(u.uid)) return { id: d.id, ...d.data() } } catch { } }
         try { const q = await getDocs(query(collection(db, 'campaigns'), where('members', 'array-contains', u.uid))); return q.docs[0] ? { id: q.docs[0].id, ...q.docs[0].data() } : null } catch { return null }
@@ -18,7 +18,8 @@ guard(async u => {
             if (sheet.owner !== u.uid) return;
             seen.add(d.id); out.push(sheet)
         };
-        for (const id of (PRIV.recent || []).slice(0, 6)) { if (out.length >= 3) break; try { add(await getDoc(doc(db, 'sheets', id))) } catch { } }
+        const docs = await Promise.all((PRIV.recent || []).slice(0, 6).map(id => getDoc(doc(db, 'sheets', id)).catch(() => null)));   // em paralelo
+        docs.forEach(d => d && add(d));
         if (out.length < 3) try { (await getDocs(query(collection(db, 'sheets'), where('owner', '==', u.uid)))).docs.sort((a, b) => ms(b.data()) - ms(a.data())).forEach(add) } catch { }
         return out
     };
