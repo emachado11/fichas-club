@@ -1,0 +1,51 @@
+/* Editor de layout do portrait */
+body.pe-body { height: 100vh; overflow: hidden }
+body.pe-body #app { height: 100vh; display: flex; flex-direction: column }
+.pe-top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 8px 12px; background: var(--pn); border-bottom: 1px solid var(--ln) }
+.pe-title { font-family: Cinzel, serif; font-size: 16px }
+.pe-f { display: flex; align-items: center; gap: 5px; font-size: 14px }
+.pe-f input[type=number] { width: 66px }
+.pe-sp { flex: 1 }
+.pe-warn { background: #5a4310; padding: 6px 12px; font-size: 14px }
+.pe-main { flex: 1; min-height: 0; display: grid; grid-template-columns: 230px minmax(0, 1fr) 320px }
+.pe-l, .pe-r { background: var(--pn); overflow: auto; padding: 10px; font-size: 14px }
+.pe-l { border-right: 1px solid var(--ln) }
+.pe-r { border-left: 1px solid var(--ln) }
+.pe-l h4 { margin: 12px 0 6px; font: 700 13px Cinzel; color: var(--ac2) }
+.pe-l h4:first-child { margin-top: 0 }
+.pe-r h3 { font-size: 16px; margin-bottom: 8px }
+.eli { display: flex; gap: 8px; align-items: center; padding: 6px 8px; border: 1px solid var(--ln); border-radius: 4px; margin-bottom: 4px; cursor: pointer; background: #10161800 }
+.eli.on { border-color: var(--ac2); background: #1d2427 }
+.pe-c { background: #0b0e0f; overflow: auto; display: grid; place-items: center; padding: 24px; position: relative }
+.pe-sz { position: relative; flex: none }
+.pe-stage { position: absolute; left: 0; top: 0; transform-origin: 0 0; outline: 1px dashed #8886 }
+.pe-stage.chk { background: repeating-conic-gradient(#3b4145 0 25%, #555d62 0 50%) 0 0/20px 20px }
+.pe-stage.dark { background: #0a0a0c }
+.pe-stage.light { background: #e8e8e8 }
+.pe-stage.green { background: #00b140 }
+#pv, #ov { position: absolute; left: 0; top: 0 }
+#ov { width: 100%; height: 100%; pointer-events: auto }
+.hb { position: absolute; cursor: move; outline: calc(1px * var(--inv, 1)) dashed #5ad8ff88 }
+.hb:hover { outline-color: #5ad8ff }
+.hb.on { outline: calc(2px * var(--inv, 1)) solid #5ad8ff }
+.hd { position: absolute; width: calc(10px * var(--inv, 1)); height: calc(10px * var(--inv, 1)); background: #fff; border: calc(1px * var(--inv, 1)) solid #09f; transform: translate(-50%, -50%) }
+.hd.nw { left: 0; top: 0; cursor: nwse-resize } .hd.n { left: 50%; top: 0; cursor: ns-resize } .hd.ne { left: 100%; top: 0; cursor: nesw-resize }
+.hd.e { left: 100%; top: 50%; cursor: ew-resize } .hd.se { left: 100%; top: 100%; cursor: nwse-resize } .hd.s { left: 50%; top: 100%; cursor: ns-resize }
+.hd.sw { left: 0; top: 100%; cursor: nesw-resize } .hd.w { left: 0; top: 50%; cursor: ew-resize }
+.fr { display: flex; align-items: center; gap: 6px; margin: 4px 0 }
+.fr > span { flex: 1; min-width: 0 }
+.fr input[type=number], .fr input[type=text], .fr select { width: 150px; padding: 2px 4px; background: #0e1315; border: 1px solid var(--ln); border-radius: 3px }
+.fr input[type=range] { width: 100px } .fr output { width: 34px; text-align: right; font-size: 12px }
+.fr input[type=color] { width: 44px; height: 24px; padding: 0; border: 1px solid var(--ln); background: none }
+.pe-l .fr input[type=number] { width: 64px } .pe-l .fr input[type=text], .pe-l .fr select { width: 120px }
+.pe-r details { border: 1px solid var(--ln); border-radius: 4px; margin: 6px 0; padding: 4px 8px }
+.pe-r summary { cursor: pointer; font: 700 13px Cinzel; padding: 2px 0 }
+.pe-l button.g { width: 100%; margin-top: 6px }
+@media(max-width:1000px) {
+  body.pe-body { height: auto; overflow: auto } body.pe-body #app { height: auto }
+  .pe-main { grid-template-columns: 1fr } .pe-c { min-height: 300px } .pe-l, .pe-r { border: 0 }
+}
+
+.pe-l .fr > span { flex: none; width: 46px }
+.pe-l .fr select, .pe-l .fr input[type=text] { flex: 1; width: auto; min-width: 0 }
+.pe-top button, .pe-top .btn { padding: .3em .7em }
