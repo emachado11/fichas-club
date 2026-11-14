@@ -1,0 +1,32 @@
+{
+  "id": "./",
+  "name": "The Club",
+  "short_name": "The Club",
+  "description": "Fichas e campanhas de RPG do The Club.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0d1011",
+  "theme_color": "#0d1011",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    {
+      "src": "img/pwa-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "img/pwa-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "img/pwa-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

@@ -57,6 +57,7 @@ export function mountSheet(root, s, o = {}) {
     /* ===== Editor de enquadramento (estilo Discord): arraste a foto e use o zoom ===== */
     function openCrop(img, keep) {
         const im = img.im, W = im.naturalWidth || im.width, H = im.naturalHeight || im.height, mn = Math.min(W, H);
+        const ring = innerWidth <= 600 ? Math.max(180, Math.min(RING, innerWidth - 100)) : RING;
         const c0 = keep ? s.crop : { z: 1, x: 0, y: 0 };
         ed = { img, z: c0.z || 1, x: c0.x || 0, y: c0.y || 0 };
         modal(`<div class=ce><div class=ceh><h3>Editar imagem</h3><button class="g cex" data-a=cecancel aria-label=Fechar>✕</button></div>
@@ -64,11 +65,12 @@ export function mountSheet(root, s, o = {}) {
   <div class=zrow><span class=zi>▫</span><input type=range id=cz min=1 max=4 step=.01 value=${ed.z} aria-label=Zoom><span class="zi lg">▣</span></div>
   <p class=mt style="text-align:center;font-size:14px;margin:0">Arraste para posicionar · role ou use o controle para dar zoom</p>
   <div class=cef><button class="g lnk" data-a=cereset>Redefinir</button><span class=row><button class=g data-a=cecancel>Cancelar</button><button data-a=ceapply>Aplicar</button></span></div></div>`);
-        const st = $('#cst'), ci = $('#ci'), cg = $('#cg'), cz = $('#cz');
+        const st = $('#cst'), ci = $('#ci'), cg = $('#cg'), cr = $('#cr'), cz = $('#cz');
+        cr.style.width = ring + 'px'; cr.style.height = ring + 'px';
         const lim = () => ({ x: Math.max(0, (W / mn * ed.z - 1) / 2), y: Math.max(0, (H / mn * ed.z - 1) / 2) });
         const draw = () => {
             const l = lim(); ed.x = clamp(ed.x, -l.x, l.x); ed.y = clamp(ed.y, -l.y, l.y);
-            [ci, cg].forEach(e => { e.style.width = W / mn * RING * ed.z + 'px'; e.style.height = H / mn * RING * ed.z + 'px'; e.style.transform = `translate(-50%,-50%) translate(${ed.x * RING}px,${ed.y * RING}px)` });
+            [ci, cg].forEach(e => { e.style.width = W / mn * ring * ed.z + 'px'; e.style.height = H / mn * ring * ed.z + 'px'; e.style.transform = `translate(-50%,-50%) translate(${ed.x * ring}px,${ed.y * ring}px)` });
             cz.value = ed.z
         };
         draw();
@@ -76,7 +78,7 @@ export function mountSheet(root, s, o = {}) {
         st.onwheel = e => { e.preventDefault(); ed.z = clamp(ed.z - e.deltaY * .002, 1, 4); draw() };
         let dr = null;
         st.onpointerdown = e => { dr = { px: e.clientX, py: e.clientY, x: ed.x, y: ed.y }; st.setPointerCapture(e.pointerId); st.classList.add('drag') };
-        st.onpointermove = e => { if (!dr) return; ed.x = dr.x + (e.clientX - dr.px) / RING; ed.y = dr.y + (e.clientY - dr.py) / RING; draw() };
+        st.onpointermove = e => { if (!dr) return; ed.x = dr.x + (e.clientX - dr.px) / ring; ed.y = dr.y + (e.clientY - dr.py) / ring; draw() };
         st.onpointerup = st.onpointercancel = () => { dr = null; st.classList.remove('drag') };
         ed.draw = draw
     }

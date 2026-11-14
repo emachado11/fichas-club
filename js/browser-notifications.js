@@ -17,7 +17,13 @@ function wasRecentlyNotified(uid, key) {
 async function notify(uid, key, title, body, url) {
     if (!('Notification' in window) || Notification.permission !== 'granted' || wasRecentlyNotified(uid, key)) return;
     try {
-        const notification = new Notification(title, { body, icon: 'img/logo.png', tag: key });
+        const options = { body, icon: 'img/pwa-icon-192.png', tag: key, data: { url } };
+        const registration = 'serviceWorker' in navigator ? await navigator.serviceWorker.getRegistration() : null;
+        if (registration?.active) {
+            await registration.showNotification(title, options);
+            return
+        }
+        const notification = new Notification(title, options);
         notification.onclick = () => {
             window.focus();
             location.assign(url);

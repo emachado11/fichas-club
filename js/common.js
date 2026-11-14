@@ -1,5 +1,4 @@
 import { auth, onAuthStateChanged, signOut, scope } from './firebase.js';
-import { initDice } from './dice.js';
 import { ensureProfile } from './profile.js';
 import { mountHeader, earlyHeader, syncNav } from './header.js';
 /* Listeners da página atual: são removidos ao trocar de página sem recarregar. */
@@ -132,7 +131,7 @@ export const guard = cb => { const un = onAuthStateChanged(auth, async u => {
 }); _off.push(un); return un };
 export function page(title, html, u) {
   document.title = title ? `${title} | The Club` : 'The Club';
-  initDice(); mountHeader(u);
+  mountHeader(u);
   $('#app').innerHTML = `<div class=wrap>${title ? `<h2 class=pt>${title}</h2>` : ''}${html}</div>`
 }
 export function act(map) {

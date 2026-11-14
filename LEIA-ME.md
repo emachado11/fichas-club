@@ -9,3 +9,9 @@ Arquivos novos: `perfil.html`, `css/app.css`, `img/logo.png`, `js/header.js`, `j
 Layouts de portrait já salvos continuam como estavam: no editor, use **Converter para 2K** para ampliá-los
 para 1040×340 centralizados numa tela 2560×1440. Fotos transparentes enviadas antes desta versão já foram
 salvas como JPEG (fundo preto): é preciso enviá-las de novo.
+
+## Instalar como app
+
+O The Club pode ser instalado pelo navegador quando estiver publicado em HTTPS. No Chrome/Edge, abra o menu
+de três pontos e escolha **Instalar The Club** (ou **Instalar página como app**). O app usa os mesmos dados
+e a mesma conta do site; a instalação não permite notificações com o app fechado sem um serviço de push.
