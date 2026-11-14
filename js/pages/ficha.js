@@ -9,13 +9,20 @@ const SKIP = new Set(['updated', 'owner']);
 const st = v => JSON.stringify(v, (k, x) => x && typeof x === 'object' && !Array.isArray(x) ? Object.fromEntries(Object.entries(x).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0)) : x);
 let M, S;
 
+async function canAccessSheet(sheet, uid) {
+    if (sheet.owner === uid) return true;
+    if (!sheet.campaign) return false;
+    const campaign = await getDoc(doc(db, 'campaigns', sheet.campaign));
+    return campaign.exists() && campaign.data().master === uid
+}
+
 async function start(u) {
     S = blank();
     page(demo ? 'Ficha (demo, nada é salvo)' : 'Ficha', `<div class=row style="margin-bottom:10px"><a class="btn g" href="${demo ? 'index.html' : qs('c') ? 'campanha.html?id=' + qs('c') : 'fichas.html'}">← Voltar</a>${demo ? '' : '<button class=g data-a=obs>Copiar link do OBS</button><button class="g gear" data-a=obscfg title="Configurar portrait do OBS" aria-label="Configurar portrait do OBS">⚙</button><span id=sv class=mt></span>'}</div><div id=sh></div>`, u);
     if (demo) { M = mountSheet($('#sh'), S, {}); return }
 
     const ref = doc(db, 'sheets', id), server = {};   // server[k] = último valor conhecido no servidor (texto estável)
-    let tm, first = true, dead = false;
+    let tm, first = true, dead = false, checkingAccess = false;
     const sv = t => { const e = $('#sv'); if (e) e.textContent = t };
     /* grava só os campos que mudaram, para dois dispositivos editarem campos diferentes sem se sobrescrever */
     const flush = () => {
@@ -26,11 +33,23 @@ async function start(u) {
     };
     const queue = () => { sv('Salvando…'); clearTimeout(tm); tm = setTimeout(flush, 250) };
 
-    await new Promise((ok, no) => onSnapshot(ref, snap => {
+    await new Promise((ok, no) => onSnapshot(ref, async snap => {
+        if (dead) return;
         if (!snap.exists()) { if (first) { dead = true; page('Ficha', '<p>Ficha não encontrada.</p>', u); first = false; ok() } return }
         if (snap.metadata.hasPendingWrites) return;          // eco das minhas próprias gravações
         const d = snap.data(); let changed = false;
         if (first) {
+            if (checkingAccess) return;
+            checkingAccess = true;
+            try {
+                if (!await canAccessSheet(d, u.uid)) {
+                    dead = true; first = false; checkingAccess = false;
+                    page('Ficha', '<p class=er>Você não tem permissão para acessar esta ficha.</p>', u); ok(); return
+                }
+            } catch (x) {
+                dead = true; first = false; checkingAccess = false; no(x); return
+            }
+            checkingAccess = false;
             Object.assign(S, blank(), d); migrate(S);
             if (d.owner === u.uid) trackSheet(u.uid, id);
             for (const k of Object.keys(d)) if (!SKIP.has(k)) server[k] = st(d[k]);

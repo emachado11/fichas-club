@@ -620,7 +620,7 @@ textarea.ot {
     gap: 8px
 }
 
-.skill-catalog-modal {
+.catalog-picker-modal {
     box-sizing: border-box;
     width: min(760px, 94vw);
     height: min(86vh, 840px);
@@ -629,25 +629,25 @@ textarea.ot {
     grid-template-rows: auto minmax(0, 1fr)
 }
 
-.skill-modal-head {
+.catalog-modal-head {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 12px
 }
 
-.skill-modal-head h3 {
+.catalog-modal-head h3 {
     margin: 0
 }
 
-.skill-modal-head button {
+.catalog-modal-head button {
     flex: 0 0 42px;
     min-height: 42px;
     padding: 0;
     font-size: 22px
 }
 
-.skill-modal-list {
+.catalog-modal-list {
     display: grid;
     align-content: start;
     gap: 4px;
@@ -657,23 +657,23 @@ textarea.ot {
     padding-right: 4px
 }
 
-.skill-modal-list .cat {
+.catalog-modal-list .cat {
     margin: 0
 }
 
-.skill-create-modal {
+.catalog-create-modal {
     box-sizing: border-box;
     width: min(560px, 94vw);
     max-height: 90vh
 }
 
-.skill-create-modal input,
-.skill-create-modal textarea {
+.catalog-create-modal input,
+.catalog-create-modal textarea {
     box-sizing: border-box;
     width: 100%
 }
 
-.skill-create-modal textarea {
+.catalog-create-modal textarea {
     min-height: 180px;
     max-height: 55vh;
     resize: vertical
@@ -695,44 +695,44 @@ textarea.ot {
 }
 
 @media (max-width: 600px) {
-    .skill-catalog-modal {
+    .catalog-picker-modal {
         width: calc(100vw - 20px);
         height: calc(100vh - 24px);
         max-height: none;
         padding: 12px
     }
 
-    .skill-create-modal {
+    .catalog-create-modal {
         width: calc(100vw - 20px);
         max-height: calc(100vh - 24px);
         padding: 12px
     }
 
-    .skill-create-modal textarea {
+    .catalog-create-modal textarea {
         max-height: 45vh
     }
 }
 
 @supports (height: 100dvh) {
-    .skill-catalog-modal {
+    .catalog-picker-modal {
         height: min(86dvh, 840px);
         max-height: 90dvh
     }
 
-    .skill-create-modal {
+    .catalog-create-modal {
         max-height: 90dvh
     }
 
     @media (max-width: 600px) {
-        .skill-catalog-modal {
+        .catalog-picker-modal {
             height: calc(100dvh - 24px)
         }
 
-        .skill-create-modal {
+        .catalog-create-modal {
             max-height: calc(100dvh - 24px)
         }
 
-        .skill-create-modal textarea {
+        .catalog-create-modal textarea {
             max-height: 45dvh
         }
     }

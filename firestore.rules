@@ -15,6 +15,10 @@ rules_version='2'; service cloud.firestore { match /databases/{d}/documents {
  match /campaigns/{id}/investigation/{itemId} {
   allow read, write: if request.auth!=null &&
    get(/databases/$(d)/documents/campaigns/$(id)).data.master==request.auth.uid; }
+ match /campaigns/{id}/playerInvestigation/{itemId} {
+  allow read, write: if request.auth!=null &&
+   (request.auth.uid in get(/databases/$(d)/documents/campaigns/$(id)).data.members ||
+    get(/databases/$(d)/documents/campaigns/$(id)).data.master==request.auth.uid); }
  /* Layout base dos portraits de OBS (um por campanha). O OBS não faz login, então a leitura é pública; só o mestre grava. */
  match /layouts/{id} { allow get: if true;
   allow create, update, delete: if request.auth!=null && get(/databases/$(d)/documents/campaigns/$(id)).data.master==request.auth.uid; }

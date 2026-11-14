@@ -53,23 +53,25 @@ async function deleteAccountData(uid) {
 
 guard(u => {
   let tab = location.hash.slice(1) || 'perfil', friends = [], friendRequests = { incoming: [], outgoing: [] };
+  if (tab === 'conta') { tab = 'perfil'; history.replaceState(null, '', '#perfil') }
   const pwd = u.providerData.some(p => p.providerId === 'password');
-  page('Perfil', `<div class=ptabs role=tablist>${[['perfil', 'Perfil'], ['aparencia', 'Aparência'], ['conta', 'Conta'], ['amigos', 'Amigos']].map(([k, t]) => `<button role=tab data-a=tab data-v=${k} id=t_${k}>${t}</button>`).join('')}</div><div class=pf2 id=pb></div>`, u);
-  const msg = (t, bad) => { const e = $('#ms'); if (e) { e.textContent = t; e.className = bad ? 'er' : 'ok' } };
+  page('Perfil', `<div class=ptabs role=tablist>${[['perfil', 'Perfil'], ['aparencia', 'Aparência'], ['amigos', 'Amigos']].map(([k, t]) => `<button role=tab data-a=tab data-v=${k} id=t_${k}>${t}</button>`).join('')}</div><div class=pf2 id=pb></div>`, u);
+  const msg = (t, bad, id = 'ms') => { const e = $('#' + id); if (e) { e.textContent = t; e.className = bad ? 'er' : 'ok' } };
   const draw = () => {
     document.querySelectorAll('.ptabs button').forEach(b => { const on = b.dataset.v == tab; b.classList.toggle('on', on); b.setAttribute('aria-selected', on) });
     const me = ME || {}, T = {
       perfil: `<div class=pn><div class=avrow><span data-a=photo role=button tabindex=0 title="Trocar foto">${avatar(me, 'xl')}</span><div class=cps><button data-a=photo>Trocar foto</button>${me.photo ? '<button class=g data-a=rmphoto>Remover</button>' : ''}</div></div>
         <label class=fld><span>Nome de exibição</span><input id=dn maxlength=32 value="${esc(me.displayName)}"></label>
         <label class=fld><span>@ de usuário</span><input id=un maxlength=20 value="${esc(me.username)}" autocapitalize=none autocomplete=off><small class=hint>3 a 20 caracteres: letras minúsculas, números, _ e .</small></label>
-        <div><button data-a=saveprof>Salvar</button></div><p id=ms class=ok></p></div>`,
+        <div><button data-a=saveprof>Salvar</button></div><p id=ms class=ok></p></div>
+        <div class=pn><b class=cz>Conta</b><b>E-mail</b><p style="margin:0">${esc(u.email || '—')}</p>${pwd ? `<label class=fld><span>Novo e-mail</span><input id=ne type=email autocomplete=email></label><label class=fld><span>Senha atual</span><input id=cp1 type=password autocomplete=current-password></label><div><button data-a=chmail>Alterar e-mail</button></div><p class=hint>Enviamos um link de confirmação para o novo endereço; o e-mail só muda depois de confirmar.</p>` : '<p class=hint>Sua conta entra com o Google, então o e-mail é gerenciado por lá.</p>'}<p id=mailmsg class=ok></p>
+        ${pwd ? `<b>Senha</b><label class=fld><span>Senha atual</span><input id=cp2 type=password autocomplete=current-password></label><label class=fld><span>Nova senha</span><input id=np type=password autocomplete=new-password minlength=6></label><label class=fld><span>Repetir nova senha</span><input id=np2 type=password autocomplete=new-password></label><div class=row><button data-a=chpass>Alterar senha</button><button class=g data-a=reset>Enviar e-mail de redefinição</button></div><p id=ms2 class=ok></p>` : ''}
+        </div>
+        <div class=pn><b class=cz>Apagar perfil</b><p class=hint>Apaga sua conta, fichas, amizades e dados privados. Campanhas suas serão apagadas; fichas de outros jogadores serão mantidas e desvinculadas.</p><button class=danger data-a=delaccount style="justify-self:start">Apagar perfil</button></div>
+        <div class=pn><button class=g data-a=out style="justify-self:start">Sair da conta</button></div>`,
       aparencia: `<div class=pn><b class=cz>Modos:</b><div class="themes modes">${Object.entries(MODES).map(([k, v]) => `<button class="th ${document.documentElement.dataset.theme == k ? 'on' : ''}" data-a=theme data-v=${k}><i></i>${v}</button>`).join('')}</div></div>
         <div class=pn><b class=cz>Temas:</b><div class="themes palettes">${Object.entries(PALETTES).map(([k, v]) => `<button class="th ${document.documentElement.dataset.palette == k ? 'on' : ''}" data-a=palette data-v=${k}><i></i>${v}</button>`).join('')}</div></div>
         `,
-      conta: `<div class=pn><b class=cz>E-mail</b><p style="margin:0">${esc(u.email || '—')}</p>${pwd ? `<label class=fld><span>Novo e-mail</span><input id=ne type=email autocomplete=email></label><label class=fld><span>Senha atual</span><input id=cp1 type=password autocomplete=current-password></label><div><button data-a=chmail>Alterar e-mail</button></div><p class=hint>Enviamos um link de confirmação para o novo endereço; o e-mail só muda depois de confirmar.</p>` : '<p class=hint>Sua conta entra com o Google, então o e-mail é gerenciado por lá.</p>'}<p id=ms class=ok></p></div>
-        ${pwd ? `<div class=pn><b class=cz>Senha</b><label class=fld><span>Senha atual</span><input id=cp2 type=password autocomplete=current-password></label><label class=fld><span>Nova senha</span><input id=np type=password autocomplete=new-password minlength=6></label><label class=fld><span>Repetir nova senha</span><input id=np2 type=password autocomplete=new-password></label><div class=row><button data-a=chpass>Alterar senha</button><button class=g data-a=reset>Enviar e-mail de redefinição</button></div><p id=ms2 class=ok></p></div>` : ''}
-        <div class=pn><b class=cz>Apagar perfil</b><p class=hint>Apaga sua conta, fichas, amizades e dados privados. Campanhas suas serão apagadas; fichas de outros jogadores serão mantidas e desvinculadas.</p><button class=danger data-a=delaccount style="justify-self:start">Apagar perfil</button></div>
-        <div class=pn><button class=g data-a=out style="justify-self:start">Sair da conta</button></div>`,
       amigos: `<div class=pn><b class=cz>Solicitar amizade</b><div class=row><input id=fq placeholder="@usuario ou e-mail" style="flex:1 1 220px" autocapitalize=none><button data-a=addfr>Enviar solicitação</button></div><div class=row><button class=g data-a=mylink>Copiar meu link de amizade</button></div><p id=ms class=ok></p></div>
         <div class=pn><b class=cz>Solicitações recebidas (${friendRequests.incoming.length})</b>${friendRequests.incoming.map(r => `<div class=frow><span class=who>${avatar(r.fromProfile, 'sm')}<span class=mn><b>${esc(r.fromProfile?.displayName || 'Agente')}</b><small>@${esc(r.fromProfile?.username || '')}</small></span></span><span class=row><button data-a=acceptfr data-id="${esc(r.id)}" data-from="${esc(r.from)}">Aceitar</button><button class=g data-a=rejectfr data-id="${esc(r.id)}">Recusar</button></span></div>`).join('') || '<p class=hint>Nenhuma solicitação recebida.</p>'}</div>
         <div class=pn><b class=cz>Solicitações enviadas (${friendRequests.outgoing.length})</b>${friendRequests.outgoing.map(r => `<div class=frow><span class=who>${avatar(r.toProfile, 'sm')}<span class=mn><b>${esc(r.toProfile?.displayName || 'Agente')}</b><small>@${esc(r.toProfile?.username || '')}</small></span></span><button class=g data-a=cancelreq data-id="${esc(r.id)}" data-to="${esc(r.to)}">Cancelar</button></div>`).join('') || '<p class=hint>Nenhuma solicitação enviada.</p>'}</div>
@@ -78,7 +80,7 @@ guard(u => {
   };
   draw(); watchFriends(u.uid, f => { friends = f; if (tab == 'amigos') { const k = $('#fq')?.value; draw(); if (k && $('#fq')) $('#fq').value = k } });
   watchFriendRequests(u.uid, r => { friendRequests = r; if (tab == 'amigos') { const k = $('#fq')?.value; draw(); if (k && $('#fq')) $('#fq').value = k } });
-  addEventListener('hashchange', () => { tab = location.hash.slice(1) || 'perfil'; draw() });
+  addEventListener('hashchange', () => { tab = location.hash.slice(1) || 'perfil'; if (tab === 'conta') { tab = 'perfil'; history.replaceState(null, '', '#perfil') } draw() });
   /* link de amizade: perfil.html?add=<uid> */
   const add = new URLSearchParams(location.search).get('add');
   if (add && add !== u.uid) getProfile(add).then(p => { tab = 'amigos'; draw(); modal(`<h3>Solicitar amizade</h3><div class=row style="justify-content:flex-start">${avatar(p)}<span class=mn><b>${esc(p.displayName)}</b><small>@${esc(p.username)}</small></span></div><div class=row><button data-a=okadd data-u="${esc(add)}">Enviar solicitação</button><button class=g data-a=close>Cancelar</button></div>`) });
@@ -104,7 +106,7 @@ guard(u => {
     palette: t => { applyPalette(t.dataset.v); savePriv(u.uid, { palette: t.dataset.v }).catch(() => { }); draw() },
     chmail: async () => {
       const ne = $('#ne').value.trim(); if (!ne || !$('#cp1').value) return msg('Preencha o novo e-mail e a senha atual.', 1);
-      try { await reauth($('#cp1').value); await verifyBeforeUpdateEmail(auth.currentUser, ne); msg('Enviamos um link de confirmação para ' + ne + '.') } catch (x) { msg(x.code == 'auth/invalid-credential' || x.code == 'auth/wrong-password' ? 'Senha atual incorreta.' : err(x), 1) }
+      try { await reauth($('#cp1').value); await verifyBeforeUpdateEmail(auth.currentUser, ne); msg('Enviamos um link de confirmação para ' + ne + '.', false, 'mailmsg') } catch (x) { msg(x.code == 'auth/invalid-credential' || x.code == 'auth/wrong-password' ? 'Senha atual incorreta.' : err(x), 1, 'mailmsg') }
     },
     chpass: async () => {
       const m = t => { const e = $('#ms2'); e.textContent = t[0]; e.className = t[1] ? 'er' : 'ok' };

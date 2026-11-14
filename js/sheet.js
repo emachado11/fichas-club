@@ -83,16 +83,13 @@ export function mountSheet(root, s, o = {}) {
 
     const dot = (i, j, neg) => upd(s => { const r = s.rel[i], v = neg ? -(j + 1) : j + 1; r.pts = r.pts === v ? (neg ? -j : j) : v });
     const showCatalog = () => {
-        if (tab === 'hab') {
-            modal(`<div class=skill-modal-head><h3>Habilidades</h3><button class=g data-a=createcustom aria-label="Criar habilidade personalizada" title="Criar habilidade">+</button></div><div class=skill-modal-list>${CAT.hab.map((x, i) => `<button class=cat data-a=addcat data-i=${i}>${x.name}<small>${x.description}</small></button>`).join('')}</div>`);
-            $('#modal .mb').classList.add('skill-catalog-modal');
-            return
-        }
-        modal(`<h3>${TABN[tab]}</h3>${CAT[tab].map((x, i) => `<button class=cat data-a=addcat data-i=${i}>${x.name}<small>${x.description}</small></button>`).join('')}<h3>Criar nova</h3><input id=nn placeholder=Nome><textarea id=nd rows=3 placeholder=Descrição></textarea><button data-a=addnew>Adicionar</button>`)
+        modal(`<div class=catalog-modal-head><h3>${TABN[tab]}</h3><button class=g data-a=createcustom aria-label="Criar ${tab === 'hab' ? 'habilidade' : tab === 'equip' ? 'equipamento' : 'item'}" title="Criar novo">+</button></div><div class=catalog-modal-list>${CAT[tab].map((x, i) => `<button class=cat data-a=addcat data-i=${i}>${x.name}<small>${x.description}</small></button>`).join('')}</div>`);
+        $('#modal .mb').classList.add('catalog-picker-modal')
     };
-    const showCustomAbilityForm = () => {
-        modal(`<h3>Nova habilidade</h3><input id=nn maxlength=64 placeholder=Nome><textarea id=nd rows=5 placeholder=Descrição></textarea><div class=row><button class=g data-a=backcat>Voltar</button><button data-a=addnew>Adicionar habilidade</button></div>`);
-        $('#modal .mb').classList.add('skill-create-modal')
+    const showCustomCatalogForm = () => {
+        const label = { hab: 'habilidade', equip: 'equipamento', itens: 'item' }[tab];
+        modal(`<h3>Novo ${label}</h3><input id=nn maxlength=64 placeholder=Nome><textarea id=nd rows=5 placeholder=Descrição></textarea><div class=row><button class=g data-a=backcat>Voltar</button><button data-a=addnew>Adicionar ${label}</button></div>`);
+        $('#modal .mb').classList.add('catalog-create-modal')
     };
     act({
         close: () => { ed = null; close(); render() }, dd: t => t.parentNode.classList.toggle('open'),
@@ -106,7 +103,7 @@ export function mountSheet(root, s, o = {}) {
         mundo: t => upd(s => s.mundo = t.dataset.v),
         tab: t => { tab = t.dataset.v; render() }, rm: t => upd(s => s[tab].splice(+t.dataset.i, 1)),
         cat: showCatalog,
-        createcustom: showCustomAbilityForm,
+        createcustom: showCustomCatalogForm,
         backcat: showCatalog,
         addcat: t => { const x = CAT[tab][+t.dataset.i]; upd(s => s[tab].push({ ...x })); close() },
         addnew: () => {

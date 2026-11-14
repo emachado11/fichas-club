@@ -642,6 +642,56 @@ html[data-theme=light] .ib {
   border-color: var(--c)
 }
 
+.campaign-sc-wrap {
+  position: relative;
+  transition: transform .15s
+}
+
+.campaign-sc-wrap:hover {
+  transform: translateY(-3px)
+}
+
+.campaign-sc-wrap.is-locked:hover {
+  transform: none
+}
+
+.campaign-sc-wrap .sc:hover {
+  transform: none
+}
+
+.campaign-sc-wrap.is-locked .sc:hover {
+  border-color: var(--ln);
+  cursor: default
+}
+
+.campaign-sheet-lock {
+  color: var(--mt)
+}
+
+.campaign-sheet-obs {
+  position: absolute;
+  z-index: 1;
+  top: 8px;
+  right: 8px;
+  display: none;
+  padding: 5px 9px;
+  border: 0;
+  border-radius: 999px;
+  background: #000a;
+  color: #fff
+}
+
+.campaign-sc-wrap:hover .campaign-sheet-obs,
+.campaign-sc-wrap:focus-within .campaign-sheet-obs {
+  display: block
+}
+
+@media (hover: none) {
+  .campaign-sheet-obs {
+    display: block
+  }
+}
+
 .sc[data-p=Analista] {
   --c: #35a0bb
 }
@@ -1581,7 +1631,7 @@ input[type=search] {
 
   .ptabs {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 6px;
     border-bottom: 0
   }

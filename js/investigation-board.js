@@ -53,7 +53,8 @@ async function compressImage(blob) {
 }
 
 export class InvestigationBoard {
-    constructor(campaignId) {
+    constructor(campaignId, audience = 'master') {
+        this.audience = audience;
         this.items = [];
         this.root = null;
         this.zoom = 1;
@@ -63,9 +64,11 @@ export class InvestigationBoard {
         this.pendingFrom = '';
         this.drawMode = false;
         this.gesture = null;
+        this.activePointers = new Map();
         this.contextMenu = null;
         this.saveTimers = new Map();
-        this.ref = collection(db, 'campaigns', campaignId, 'investigation');
+        const collectionName = audience === 'players' ? 'playerInvestigation' : 'investigation';
+        this.ref = collection(db, 'campaigns', campaignId, collectionName);
         this.handlers = {
             click: event => this.handleClick(event),
             input: event => this.handleInput(event),
@@ -130,7 +133,7 @@ export class InvestigationBoard {
         const selection = activeInput ? [activeInput.selectionStart, activeInput.selectionEnd] : null;
         this.root.innerHTML = `<div class=investigation-layout>
   <aside class="investigation-tools pn">
-   <h3>Elementos</h3>
+   <h3>${this.audience === 'players' ? 'Quadro compartilhado' : 'Elementos'}</h3>
    <label class=board-tool-label for=board-note-draft>Escrever</label>
    <textarea id=board-note-draft data-board-draft placeholder="Escreva uma anotação..."></textarea>
    <button type=button class=g data-board-action=note>Adicionar ao quadro</button>
@@ -146,7 +149,7 @@ export class InvestigationBoard {
     <button type=button class=g data-board-action=reset-view>Centralizar</button>
    </div>
    <p class=hint>Para conectar, clique no ponto central que aparece ao passar o mouse sobre um elemento.</p>
-   <p class=hint data-board-status>${this.pendingFrom ? 'Clique em outro elemento para criar uma conexão.' : 'Arraste o fundo para mover o quadro; use a roda do mouse para dar zoom.'}</p>
+   <p class=hint data-board-status>${this.pendingFrom ? 'Clique em outro elemento para criar uma conexão.' : 'Arraste para mover o quadro; use a pinça ou a roda do mouse para dar zoom.'}</p>
   </aside>
   <div class=investigation-viewport tabindex=0 aria-label="Quadro de investigação">
    <div class=investigation-world style="width:${BOARD_WIDTH}px;height:${BOARD_HEIGHT}px;transform:translate(${this.panX}px,${this.panY}px) scale(${this.zoom})">
@@ -436,6 +439,32 @@ export class InvestigationBoard {
     handlePointerDown(event) {
         const viewport = event.target.closest('.investigation-viewport');
         if (!viewport || (event.button !== 0 && event.button !== 1)) return;
+        this.activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+        if (this.activePointers.size > 1) {
+            if (this.activePointers.size === 2 && (!this.gesture || ['pan', 'draw', 'node'].includes(this.gesture.kind))) {
+                if (this.gesture?.kind === 'node') {
+                    const dragged = this.gesture;
+                    updateDoc(doc(this.ref, dragged.id), { x: dragged.x, y: dragged.y })
+                        .catch(error => toast(err(error), 1))
+                }
+                const pointerIds = [...this.activePointers.keys()];
+                const [first, second] = pointerIds.map(id => this.activePointers.get(id));
+                const centerX = (first.x + second.x) / 2, centerY = (first.y + second.y) / 2;
+                this.gesture = {
+                    kind: 'pinch', pointerIds,
+                    startDistance: Math.max(1, Math.hypot(second.x - first.x, second.y - first.y)),
+                    startZoom: this.zoom,
+                    world: this.worldPoint(centerX, centerY)
+                };
+                pointerIds.forEach(id => viewport.setPointerCapture(id));
+                viewport.classList.remove('is-panning');
+                this.renderVectorsIntoWorld();
+                event.preventDefault();
+                return
+            }
+            this.activePointers.delete(event.pointerId);
+            return
+        }
         if (event.target.closest('[data-board-connect]')) return;
         const point = this.worldPoint(event.clientX, event.clientY);
         if (this.drawMode && event.button === 0) {
@@ -471,6 +500,21 @@ export class InvestigationBoard {
 
     handlePointerMove(event) {
         const gesture = this.gesture;
+        if (this.activePointers.has(event.pointerId)) this.activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+        if (gesture?.kind === 'pinch') {
+            if (!gesture.pointerIds.includes(event.pointerId)) return;
+            const [first, second] = gesture.pointerIds.map(id => this.activePointers.get(id));
+            if (!first || !second) return;
+            const centerX = (first.x + second.x) / 2, centerY = (first.y + second.y) / 2;
+            const distance = Math.max(1, Math.hypot(second.x - first.x, second.y - first.y));
+            const viewport = this.viewport, rect = viewport.getBoundingClientRect();
+            this.zoom = clamp(gesture.startZoom * distance / gesture.startDistance, .25, 2.5);
+            this.panX = centerX - rect.left - gesture.world.x * this.zoom;
+            this.panY = centerY - rect.top - gesture.world.y * this.zoom;
+            this.applyCamera();
+            event.preventDefault();
+            return
+        }
         if (!gesture || gesture.pointerId !== event.pointerId) return;
         if (gesture.kind === 'pan') {
             this.panX = gesture.panX + event.clientX - gesture.startX;
@@ -494,7 +538,20 @@ export class InvestigationBoard {
     }
 
     async handlePointerUp(event) {
+        if (this.activePointers.has(event.pointerId)) this.activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+        this.activePointers.delete(event.pointerId);
         const gesture = this.gesture;
+        if (gesture?.kind === 'pinch') {
+            const remaining = this.activePointers.entries().next().value;
+            this.gesture = remaining ? {
+                kind: 'pan', pointerId: remaining[0],
+                startX: remaining[1].x, startY: remaining[1].y,
+                panX: this.panX, panY: this.panY
+            } : null;
+            this.viewport?.classList.toggle('is-panning', Boolean(remaining));
+            this.renderVectorsIntoWorld();
+            return
+        }
         if (!gesture || gesture.pointerId !== event.pointerId) return;
         this.gesture = null;
         this.viewport?.classList.remove('is-panning');
@@ -527,6 +584,17 @@ export class InvestigationBoard {
     }
 
     handlePointerCancel(event) {
+        this.activePointers.delete(event.pointerId);
+        if (this.gesture?.kind === 'pinch') {
+            const remaining = this.activePointers.entries().next().value;
+            this.gesture = remaining ? {
+                kind: 'pan', pointerId: remaining[0],
+                startX: remaining[1].x, startY: remaining[1].y,
+                panX: this.panX, panY: this.panY
+            } : null;
+            this.viewport?.classList.toggle('is-panning', Boolean(remaining));
+            return
+        }
         if (!this.gesture || this.gesture.pointerId !== event.pointerId) return;
         if (this.gesture.kind === 'node') {
             const item = this.items.find(value => value.id === this.gesture.id);
