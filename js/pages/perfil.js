@@ -66,6 +66,7 @@ guard(u => {
         <label class=fld><span>Nome de exibição</span><input id=dn maxlength=32 value="${esc(me.displayName)}"></label>
         <label class=fld><span>@ de usuário</span><input id=un maxlength=20 value="${esc(me.username)}" autocapitalize=none autocomplete=off><small class=hint>3 a 20 caracteres: letras minúsculas, números, _ e .</small></label>
         <div><button data-a=saveprof>Salvar</button></div><p id=ms class=ok></p></div>
+        <div class=pn><b class=cz>Notificações neste navegador</b><p id=notification-status class=hint>${!('Notification' in window) ? 'Este navegador não oferece notificações.' : Notification.permission === 'granted' ? 'Ativas enquanto o site estiver aberto neste navegador.' : Notification.permission === 'denied' ? 'Bloqueadas. Altere a permissão do site nas configurações do navegador.' : 'Ative para receber avisos enquanto o site estiver aberto neste navegador.'}</p>${'Notification' in window && Notification.permission === 'default' ? '<button data-a=enableNotifications>Ativar notificações</button>' : ''}</div>
         <div class=pn><b class=cz>Conta</b><b>E-mail</b><p style="margin:0">${esc(u.email || '—')}</p>${pwd ? `<label class=fld><span>Novo e-mail</span><input id=ne type=email autocomplete=email></label><label class=fld><span>Senha atual</span><input id=cp1 type=password autocomplete=current-password></label><div><button data-a=chmail>Alterar e-mail</button></div><p class=hint>Enviamos um link de confirmação para o novo endereço; o e-mail só muda depois de confirmar.</p>` : '<p class=hint>Sua conta entra com o Google, então o e-mail é gerenciado por lá.</p>'}<p id=mailmsg class=ok></p>
         ${pwd ? `<b>Senha</b><label class=fld><span>Senha atual</span><input id=cp2 type=password autocomplete=current-password></label><label class=fld><span>Nova senha</span><input id=np type=password autocomplete=new-password minlength=6></label><label class=fld><span>Repetir nova senha</span><input id=np2 type=password autocomplete=new-password></label><div class=row><button data-a=chpass>Alterar senha</button><button class=g data-a=reset>Enviar e-mail de redefinição</button></div><p id=ms2 class=ok></p>` : ''}
         </div>
@@ -159,6 +160,22 @@ guard(u => {
     addfr: async () => {
       const p = await findUser($('#fq').value); if (!p) return msg('Ninguém encontrado com esse @ ou e-mail.', 1);
       await sendFriendRequest(u.uid, p.uid); $('#fq').value = ''; msg(`Solicitação enviada para @${p.username} ✓`)
+    },
+    enableNotifications: async t => {
+      if (!('Notification' in window)) return toast('Este navegador não oferece notificações.', 1);
+      const permission = await Notification.requestPermission();
+      const status = $('#notification-status');
+      if (permission === 'granted') {
+        if (status) status.textContent = 'Ativas enquanto o site estiver aberto neste navegador.';
+        t.remove();
+        toast('Notificações ativadas neste navegador.')
+      } else if (permission === 'denied') {
+        if (status) status.textContent = 'Bloqueadas. Altere a permissão do site nas configurações do navegador.';
+        t.remove();
+        toast('A permissão foi bloqueada pelo navegador.', 1)
+      } else {
+        toast('Permissão de notificações não concedida.', 1)
+      }
     },
     okadd: async t => { const p = await getProfile(t.dataset.u); await sendFriendRequest(u.uid, t.dataset.u); close(); toast(`Solicitação enviada para @${p.username}`); history.replaceState(null, '', 'perfil.html#amigos') },
     acceptfr: async t => { await answerFriendRequest({ id: t.dataset.id, from: t.dataset.from, to: u.uid }, u.uid, true); toast('Solicitação aceita; vocês agora são amigos.') },

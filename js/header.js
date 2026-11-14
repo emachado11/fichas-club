@@ -2,6 +2,7 @@
 import { ME, setMe, avatar, unlockEntityTheme, watchFriends, watchFriendRequests, watchInvites, answerFriendRequest, answerInvite } from './profile.js';
 import { esc, toast, err } from './common.js';
 import { scope } from './firebase.js';
+import { watchBrowserNotifications } from './browser-notifications.js';
 
 const IC = {
   home: '<svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10"/></svg>',
@@ -157,6 +158,7 @@ export function mountHeader(u, opt = {}) {
     L.forEach(i => i._t = i.id);
     document.getElementById('hinv').innerHTML = L.length ? L.map(i => `<div class=iv><div class=ivb style="${i.thumb ? `background-image:url('${esc(i.thumb)}')` : ''}"></div><div class=ivt><b>${esc(i.campaignName)}</b><small>de @${esc(i.fromProfile?.username || '?')}</small><span class=row><button data-inv=1 data-id="${esc(i.id)}" data-c="${esc(i.campaign)}">Aceitar</button><button class=g data-inv=0 data-id="${esc(i.id)}" data-c="${esc(i.campaign)}">Recusar</button></span></div></div>`).join('') : '<p class=mt>Nenhum convite pendente.</p>'
   }));
+  unsubs.push(watchBrowserNotifications(u.uid));
   scope.global = false
 }
 async function answer(b, u) {
