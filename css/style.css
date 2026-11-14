@@ -1006,27 +1006,154 @@ nav {
         }
     }
 }
+
 /* ===== Foto: recorte (estilo Discord) e troca de mundo ===== */
-.pic { overflow: hidden; position: relative }
-.pic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; max-width: none; pointer-events: none; user-select: none }
-.pic.sm { width: 40px; height: 40px; font-size: 16px; cursor: default }
-.strow { margin: 4px 0; align-items: center }
-.ce { display: grid; gap: 12px; width: min(100%, 420px); margin: auto }
-.ceh { display: flex; justify-content: space-between; align-items: center }
-.cex { padding: .2em .6em }
-.stage { position: relative; height: 330px; background: var(--in); border-radius: 8px; overflow: hidden; cursor: grab; touch-action: none; user-select: none }
-.stage.drag { cursor: grabbing }
-.stage img { position: absolute; left: 50%; top: 50%; max-width: none; pointer-events: none; user-select: none }
-.stage .gh { opacity: .35 }
-.stage .ring { position: absolute; left: 50%; top: 50%; width: 260px; height: 260px; transform: translate(-50%, -50%); border-radius: 50%; overflow: hidden; border: 3px solid #fff; box-shadow: 0 0 0 1px #0008 }
-.zrow { display: flex; align-items: center; gap: 10px }
-.zrow input[type=range] { flex: 1 }
-.zi { opacity: .7; font-size: 14px }
-.zi.lg { font-size: 22px }
-.cef { display: flex; justify-content: space-between; align-items: center }
-.lnk { background: none !important; color: var(--ac2); padding: 0 }
-.mundo { display: flex; margin-bottom: 8px; border: 1px solid var(--ln); border-radius: 6px; overflow: hidden }
-.mundo button { flex: 1; background: var(--gb2); border-radius: 0; color: var(--mt) }
-.mundo button.on { background: var(--ac); color: var(--tx) }
-.chk { display: flex; align-items: center; gap: 8px; cursor: pointer }
-.gear { font-size: 18px; line-height: 1; padding: .3em .55em }
+.pic {
+    overflow: hidden;
+    position: relative
+}
+
+.pic img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    max-width: none;
+    pointer-events: none;
+    user-select: none
+}
+
+.pic.sm {
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
+    cursor: default
+}
+
+.strow {
+    margin: 4px 0;
+    align-items: center
+}
+
+.ce {
+    display: grid;
+    gap: 12px;
+    width: min(100%, 420px);
+    margin: auto
+}
+
+.ceh {
+    display: flex;
+    justify-content: space-between;
+    align-items: center
+}
+
+.cex {
+    padding: .2em .6em
+}
+
+.stage {
+    position: relative;
+    height: 330px;
+    background: var(--in);
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: grab;
+    touch-action: none;
+    user-select: none
+}
+
+.stage.drag {
+    cursor: grabbing
+}
+
+.stage img {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    max-width: none;
+    pointer-events: none;
+    user-select: none
+}
+
+.stage .gh {
+    opacity: .35
+}
+
+.stage .ring {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 260px;
+    height: 260px;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    overflow: hidden;
+    border: 3px solid #fff;
+    box-shadow: 0 0 0 1px #0008
+}
+
+.zrow {
+    display: flex;
+    align-items: center;
+    gap: 10px
+}
+
+.zrow input[type=range] {
+    flex: 1
+}
+
+.zi {
+    opacity: .7;
+    font-size: 14px
+}
+
+.zi.lg {
+    font-size: 22px
+}
+
+.cef {
+    display: flex;
+    justify-content: space-between;
+    align-items: center
+}
+
+.lnk {
+    background: none !important;
+    color: var(--ac2);
+    padding: 0
+}
+
+.mundo {
+    display: flex;
+    margin-bottom: 8px;
+    border: 1px solid var(--ln);
+    border-radius: 6px;
+    overflow: hidden
+}
+
+.mundo button {
+    flex: 1;
+    background: var(--gb2);
+    border-radius: 0;
+    color: var(--mt)
+}
+
+.mundo button.on {
+    background: var(--ac);
+    color: var(--tx)
+}
+
+.chk {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer
+}
+
+.gear {
+    font-size: 18px;
+    line-height: 1;
+    padding: .3em .55em
+}

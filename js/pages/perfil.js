@@ -58,7 +58,7 @@ guard(u => {
     chpass: async () => {
       const m = t => { const e = $('#ms2'); e.textContent = t[0]; e.className = t[1] ? 'er' : 'ok' };
       if (!$('#cp2').value) return m(['Digite a senha atual.', 1]); if ($('#np').value.length < 6) return m(['A nova senha precisa ter ao menos 6 caracteres.', 1]); if ($('#np').value !== $('#np2').value) return m(['As senhas novas não conferem.', 1]);
-      try { await reauth($('#cp2').value); await updatePassword(auth.currentUser, $('#np').value); m(['Senha alterada ✓']); ['#cp2', '#np', '#np2'].forEach(i => $(i).value = '') } catch (x) { m([x.code == 'auth/invalid-credential' || x.code == 'auth/wrong-password' ? 'Senha atual incorreta.' : err(x), 1]) }
+      try { await reauth($('#cp2').value); await updatePassword(auth.currentUser, $('#np').value); m(['Senha alterada ✓']);['#cp2', '#np', '#np2'].forEach(i => $(i).value = '') } catch (x) { m([x.code == 'auth/invalid-credential' || x.code == 'auth/wrong-password' ? 'Senha atual incorreta.' : err(x), 1]) }
     },
     reset: async () => { await sendPasswordResetEmail(auth, u.email); toast('E-mail de redefinição enviado') },
     addfr: async () => {
