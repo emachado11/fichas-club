@@ -3,14 +3,16 @@ import { db, collection, query, where, onSnapshot, getDocs, getDoc, doc, writeBa
 import { fab } from '../ui.js';
 
 async function deleteCampaign(id, uid) {
-    const [sheets, invites, layout] = await Promise.all([
+    const [sheets, invites, layout, board] = await Promise.all([
         getDocs(query(collection(db, 'sheets'), where('campaign', '==', id))),
         getDocs(query(collection(db, 'invites'), where('campaign', '==', id), where('from', '==', uid))),
-        getDoc(doc(db, 'layouts', id))
+        getDoc(doc(db, 'layouts', id)),
+        getDocs(collection(db, 'campaigns', id, 'investigation'))
     ]);
     const operations = [
         ...sheets.docs.map(sheet => batch => batch.update(sheet.ref, { campaign: deleteField() })),
         ...invites.docs.map(invite => batch => batch.delete(invite.ref)),
+        ...board.docs.map(item => batch => batch.delete(item.ref)),
         ...(layout.exists() ? [batch => batch.delete(layout.ref)] : []),
         batch => batch.delete(doc(db, 'campaigns', id))
     ];
@@ -36,7 +38,7 @@ guard(u => {
     act({
         tab: t => { tab = t.dataset.v; sessionStorage.ctab = tab; draw() },
         delcamp: async t => {
-            if (!confirm('Apagar esta campanha? As fichas serão mantidas, mas desvinculadas; convites e layout serão removidos.')) return;
+            if (!confirm('Apagar esta campanha? As fichas serão mantidas, mas desvinculadas; convites, quadro de investigação e layout serão removidos.')) return;
             await deleteCampaign(t.dataset.id, u.uid);
             toast('Campanha apagada.')
         }

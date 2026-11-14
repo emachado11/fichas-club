@@ -1,6 +1,7 @@
 import { guard, page, act, qs, $, esc, clip, err, modal, close, face, picHTML, toast } from '../common.js';
 import { db, doc, collection, query, where, onSnapshot, getDocs, updateDoc, arrayRemove, deleteField, writeBatch } from '../firebase.js';
 import { getProfile, findUser, sendInvite, watchFriends, trackCampaign, avatar } from '../profile.js';
+import { InvestigationBoard } from '../investigation-board.js';
 const id = qs('id'); let U;
 
 async function removePlayer(campaignId, playerUid) {
@@ -16,7 +17,7 @@ async function removePlayer(campaignId, playerUid) {
 
 guard(u => {
     U = u; page('', '<div id=ct></div>', u); trackCampaign(u.uid, id);
-    let c, L = [], friends = [], sent = [], people = [];
+    let c, L = [], friends = [], sent = [], people = [], campaignTab = 'jogadores', investigationBoard = null;
     let contextMenu = null;
     const closeContextMenu = () => { contextMenu?.remove(); contextMenu = null };
     const openContextMenu = (e, action, label, data) => {
@@ -37,19 +38,28 @@ guard(u => {
     addEventListener('keydown', e => { if (e.key === 'Escape') closeContextMenu() });
     const draw = () => {
         if (!c) return; const m = c.master == u.uid, v = L.filter(x => m || x.owner == u.uid), mem = new Set(c.members || []), sentTo = new Set(sent.map(s => s.to));
-        $('#ct').innerHTML = `<div class=camphead style="${c.banner ? `background-image:url('${esc(c.banner)}')` : ''}"><div class=hi><span class=chip>${m ? 'Área do mestre' : 'Área do jogador'}</span><h1 style="font-size:clamp(22px,4vw,36px)">${esc(c.name)}</h1>${c.desc ? `<p>${esc(c.desc)}</p>` : ''}</div></div>
-  <div class=row style="margin:10px 0;justify-content:flex-start">${m ? '<a class="btn" href="portrait-editor.html?c=' + id + '">Layout base dos portraits (OBS)</a>' : ''}${!m && mem.has(u.uid) ? '<button class=g data-a=leave>Sair da campanha</button>' : ''}<button class=g data-a=link>Vincular uma ficha</button></div>
+        const playersContent = `<div class=row style="margin:10px 0;justify-content:flex-start">${m ? '<a class="btn" href="portrait-editor.html?c=' + id + '">Layout base dos portraits (OBS)</a>' : ''}${!m && mem.has(u.uid) ? '<button class=g data-a=leave>Sair da campanha</button>' : ''}<button class=g data-a=link>Vincular uma ficha</button></div>
   <div class=pn><h3>${m ? 'Todas as fichas' : 'Minhas fichas na campanha'}</h3>${v.map(x => `<div class=card data-a=open data-id=${x.id} data-sheet-context><span class=row><span class="pic sm">${picHTML(face(x), x.crop)}</span><span>${esc(x.name)} <span class=mt>${x.perfil}, nível ${x.nivel}</span></span></span><span>PV ${x.pv}/${x.pvMax} · PD ${x.pd}/${x.pdMax}</span><button class=g data-a=obs data-id=${x.id}>OBS</button></div>`).join('') || '<p class=mt>Nenhuma ficha vinculada.</p>'}</div>
   <div class=pn style="margin-top:12px"><h3>Participantes</h3><div class="row mem">${people.map(p => `<span class=row style="gap:6px" ${m && p.uid !== c.master ? `data-player-context="${esc(p.uid)}"` : ''}>${avatar(p, 'sm')}<span class=mn><b>${esc(p.displayName)}</b><small>@${esc(p.username)}${p.uid == c.master ? ' · mestre' : ''}</small></span></span>`).join('')}</div></div>
   ${m ? `<div class=pn style="margin-top:12px;display:grid;gap:10px"><h3>Convidar</h3>
    <div class=row style="justify-content:flex-start"><input id=iq placeholder="@usuario ou e-mail" style="flex:1 1 220px"><button data-a=sendinv>Enviar convite</button></div>
    ${friends.length ? `<div><b class=mt>Amigos</b>${friends.map(p => `<div class=frow><span class=who>${avatar(p, 'sm')}<span class=mn><b>${esc(p.displayName)}</b><small>@${esc(p.username)}</small></span></span>${mem.has(p.uid) ? '<small>Já na campanha</small>' : sentTo.has(p.uid) ? '<small>Convite enviado</small>' : `<button class=g data-a=invfr data-u="${esc(p.uid)}">Convidar</button>`}</div>`).join('')}</div>` : '<p class=hint>Adicione amigos em Perfil › Amigos para convidá-los com um toque.</p>'}
    ${sent.length ? `<p class=hint>Convites pendentes: ${sent.map(s => '@' + esc(s.toName || '?')).join(', ')}</p>` : ''}
-   <div><button class=g data-a=invite>Copiar link de convite</button></div></div>` : ''}
-  <div class="pn mt" style="margin-top:12px">Investigação${m ? ' e escudo do mestre' : ''}: em breve.</div>`
+   <div><button class=g data-a=invite>Copiar link de convite</button></div></div>` : ''}`;
+        $('#ct').innerHTML = `<div class=camphead style="${c.banner ? `background-image:url('${esc(c.banner)}')` : ''}"><div class=hi><span class=chip>${m ? 'Área do mestre' : 'Área do jogador'}</span><h1 style="font-size:clamp(22px,4vw,36px)">${esc(c.name)}</h1>${c.desc ? `<p>${esc(c.desc)}</p>` : ''}</div></div>
+  ${m ? `<div class="tabs2 campaign-tabs" role=tablist aria-label="Seções da campanha">
+   ${[['jogadores', 'JOGADORES'], ['investigacao', 'INVESTIGAÇÃO'], ['combate', 'COMBATE'], ['importantes', 'IMPORTANTES']].map(([key, label]) => `<button type=button role=tab data-a=campaignTab data-tab=${key} aria-selected="${campaignTab === key}" class="${campaignTab === key ? 'on' : ''}">${label}</button>`).join('')}
+  </div>
+  <section class="campaign-tab-panel ${campaignTab === 'investigacao' ? 'campaign-board-panel' : ''}">${campaignTab === 'jogadores' ? playersContent : campaignTab === 'investigacao' ? '<div id=investigation-board></div>' : `<p class=hint>${campaignTab === 'combate' ? 'Combate' : 'Importantes'}: em breve.</p>`}</section>` : playersContent}`;
+        if (m && campaignTab === 'investigacao' && investigationBoard) investigationBoard.attach($('#investigation-board'));
     };
     const who = async () => { people = await Promise.all((c.members || []).map(getProfile)); people.sort((a, b) => (b.uid == c.master) - (a.uid == c.master)); draw() };
-    onSnapshot(doc(db, 'campaigns', id), d => { c = d.data(); if (!c) { $('#ct').innerHTML = '<p class=er>Campanha não encontrada.</p>'; return } draw(); who() }, x => $('#ct').innerHTML = `<p class=er>${err(x)}</p>`);
+    onSnapshot(doc(db, 'campaigns', id), d => {
+        c = d.data();
+        if (!c) { $('#ct').innerHTML = '<p class=er>Campanha não encontrada.</p>'; return }
+        if (c.master === u.uid && !investigationBoard) investigationBoard = new InvestigationBoard(id);
+        draw(); who()
+    }, x => $('#ct').innerHTML = `<p class=er>${err(x)}</p>`);
     onSnapshot(query(collection(db, 'sheets'), where('campaign', '==', id)), q => { L = q.docs.map(d => ({ id: d.id, ...d.data() })); draw() });
     $('#ct').addEventListener('contextmenu', e => {
         const participant = e.target.closest('[data-player-context]');
@@ -72,6 +82,10 @@ guard(u => {
         await sendInvite(u, c, id, p); toast(`Convite enviado para @${p.username}`)
     };
     act({
+        campaignTab: t => {
+            if (!['jogadores', 'investigacao', 'combate', 'importantes'].includes(t.dataset.tab)) return;
+            campaignTab = t.dataset.tab; draw()
+        },
         sendinv: async () => { const q = $('#iq').value; await invite(await findUser(q)); if ($('#iq')) $('#iq').value = '' },
         invfr: async t => invite(await getProfile(t.dataset.u)),
         invite: () => clip(new URL('convite.html?c=' + id, location.href).href, 'Link de convite copiado'),

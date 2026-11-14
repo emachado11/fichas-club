@@ -956,8 +956,292 @@ html[data-theme=light] .ib {
 }
 
 .mem>.row {
-  flex: 1 1 300px;
-  justify-content: space-between
+  flex: 0 1 auto;
+  justify-content: flex-start
+}
+
+.campaign-tabs {
+  display: flex;
+  width: 100%;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  overflow-x: auto
+}
+
+.campaign-tabs button {
+  flex: 1 0 auto;
+  padding: .65em .5em;
+  font-size: clamp(11px, 2.4vw, 14px)
+}
+
+.campaign-tab-panel {
+  min-height: 52px;
+  display: grid;
+  align-items: center
+}
+
+.campaign-tab-panel p {
+  margin: 0
+}
+
+#investigation-board {
+  width: 100%
+}
+
+.campaign-board-panel {
+  display: block
+}
+
+.investigation-layout {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 12px;
+  align-items: stretch
+}
+
+.investigation-tools {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-width: 0
+}
+
+.investigation-tools h3 {
+  margin: 0 0 4px
+}
+
+.board-tool-label {
+  color: var(--mt);
+  font-size: 13px
+}
+
+#board-note-draft {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 100px;
+  resize: vertical
+}
+
+.investigation-tools .g {
+  width: 100%
+}
+
+.board-tool-group {
+  display: grid;
+  gap: 5px
+}
+
+.board-tool-group small {
+  color: var(--mt);
+  line-height: 1.35
+}
+
+.board-draw-toggle.on {
+  border-color: var(--ac);
+  background: color-mix(in srgb, var(--ac) 20%, var(--gb2))
+}
+
+.board-zoom-controls {
+  display: grid;
+  grid-template-columns: 38px minmax(40px, 1fr) 38px;
+  gap: 5px;
+  align-items: center;
+  text-align: center
+}
+
+.board-zoom-controls [data-board-action=reset-view] {
+  grid-column: 1 / -1
+}
+
+.board-zoom-controls [data-board-zoom] {
+  color: var(--mt);
+  font-size: 13px
+}
+
+.investigation-tools .hint {
+  margin: 2px 0 0;
+  line-height: 1.4
+}
+
+.investigation-viewport {
+  position: relative;
+  min-width: 0;
+  min-height: 620px;
+  overflow: hidden;
+  border: 1px solid var(--ln);
+  border-radius: 8px;
+  background: var(--in2);
+  touch-action: none;
+  cursor: grab
+}
+
+.investigation-viewport.is-panning {
+  cursor: grabbing
+}
+
+.investigation-world {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 0 0;
+  background-color: var(--in2);
+  background-image: radial-gradient(var(--ln) 1px, transparent 1px);
+  background-size: 22px 22px
+}
+
+.investigation-vectors {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  overflow: visible;
+  pointer-events: none
+}
+
+.board-connections line {
+  stroke: var(--ac2);
+  stroke-width: 3;
+  stroke-linecap: round;
+  opacity: .9;
+  pointer-events: stroke;
+  cursor: context-menu
+}
+
+.board-drawing-visible,
+.investigation-vectors [data-live-stroke] {
+  fill: none;
+  stroke: var(--ac);
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-linejoin: round
+}
+
+.board-drawing-visible {
+  pointer-events: none
+}
+
+.board-drawing-hitbox {
+  fill: transparent;
+  pointer-events: all;
+  cursor: grab
+}
+
+.board-connect-point {
+  position: absolute;
+  z-index: 4;
+  top: 50%;
+  left: 50%;
+  width: 14px;
+  height: 14px;
+  min-width: 0;
+  padding: 0;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: var(--ac);
+  box-shadow: 0 1px 5px #0009;
+  transform: translate(-50%, -50%);
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .12s ease
+}
+
+.investigation-item:hover .board-connect-point,
+.board-connect-point:focus-visible {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto
+}
+
+.board-connect-point-svg {
+  fill: var(--ac);
+  stroke: #fff;
+  stroke-width: 2;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  cursor: crosshair;
+  transition: opacity .12s ease
+}
+
+.board-drawing-group:hover .board-connect-point-svg,
+.board-connect-point-svg:focus-visible {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: all
+}
+
+.investigation-item {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--ln);
+  border-radius: 8px;
+  background: var(--pn);
+  color: var(--tx);
+  box-shadow: 0 6px 16px #0005
+}
+
+.board-item-head {
+  display: flex;
+  flex: 0 0 28px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 8px;
+  background: var(--gb);
+  color: var(--tx);
+  font-size: 12px;
+  user-select: none;
+  cursor: grab;
+  touch-action: none
+}
+
+.board-item-head small {
+  color: var(--mt)
+}
+
+.board-item-body {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  padding: 6px
+}
+
+.board-note {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  padding: 2px;
+  resize: none;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--tx);
+  font: inherit;
+  line-height: 1.4
+}
+
+.board-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain
+}
+
+.board-pan-indicator {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  z-index: 3;
+  padding: 5px 8px;
+  border-radius: 6px;
+  background: var(--pop);
+  color: var(--mt);
+  font-size: 12px;
+  pointer-events: none
 }
 
 .sec2 {
@@ -1156,6 +1440,27 @@ input[type=search] {
 
 /* ===== Celular ===== */
 @media (max-width: 760px) {
+  .investigation-layout {
+    grid-template-columns: minmax(0, 1fr)
+  }
+
+  .investigation-viewport {
+    min-height: 62vh;
+    min-height: max(420px, 62vh)
+  }
+
+  .board-connect-point {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto
+  }
+
+  .board-connect-point-svg {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: all
+  }
+
   :root {
     --hdr: 54px
   }
