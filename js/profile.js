@@ -8,7 +8,7 @@ export const validHandle = h => /^[a-z0-9_.]{3,20}$/.test(h);
 export const isEmail = t => /^\S+@\S+\.\S+$/.test(String(t).trim());
 export const sha = async t => [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(String(t).trim().toLowerCase())))].map(b => b.toString(16).padStart(2, '0')).join('');
 export const MODES = { light: 'Claro', dark: 'Escuro' };
-export const PALETTES = { executor: 'Executor', analista: 'Analista', vigilante: 'Vigilante' };
+export const PALETTES = { executor: 'Executor', analista: 'Analista', vigilante: 'Vigilante', conhecimento: 'Conhecimento', morte: 'Morte', sangue: 'Sangue', energia: 'Energia', medo: 'Medo' };
 export const applyTheme = t => { t = MODES[t] ? t : 'dark'; document.documentElement.dataset.theme = t; try { localStorage.theme = t } catch { } };
 export const applyPalette = p => { p = PALETTES[p] ? p : 'executor'; document.documentElement.dataset.palette = p; try { localStorage.palette = p } catch { } };
 

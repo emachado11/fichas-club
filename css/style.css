@@ -24,6 +24,21 @@ body {
     font: 17px 'Crimson Pro', Georgia, serif
 }
 
+body[data-p=Executor] {
+    --ac: #b4472b;
+    --ac2: #d8694a
+}
+
+body[data-p=Analista] {
+    --ac: #1f7389;
+    --ac2: #35a0bb
+}
+
+body[data-p=Vigilante] {
+    --ac: #1f7f4f;
+    --ac2: #34a96f
+}
+
 body.obs {
     background: transparent
 }
@@ -69,6 +84,15 @@ button:hover,
 .g {
     background: var(--gb) !important;
     border: 1px solid var(--ln) !important
+}
+
+.danger {
+    background: #8c2525;
+    color: #fff
+}
+
+.danger:hover {
+    background: #b63333
 }
 
 input,

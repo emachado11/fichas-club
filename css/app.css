@@ -31,6 +31,11 @@ html[data-theme=light] {
 html[data-palette=executor] { --ac: #b4472b; --ac2: #d8694a }
 html[data-palette=analista] { --ac: #1f7389; --ac2: #35a0bb }
 html[data-palette=vigilante] { --ac: #1f7f4f; --ac2: #34a96f }
+html[data-palette=conhecimento] { --ac: #fbc532; --ac2: color-mix(in srgb, #fbc532 75%, white) }
+html[data-palette=morte] { --ac: #696969; --ac2: color-mix(in srgb, #696969 75%, white) }
+html[data-palette=sangue] { --ac: #780006; --ac2: color-mix(in srgb, #780006 75%, white) }
+html[data-palette=energia] { --ac: #d26dee; --ac2: color-mix(in srgb, #d26dee 75%, white) }
+html[data-palette=medo] { --ac: #e8feff; --ac2: color-mix(in srgb, #e8feff 75%, white) }
 
 html[data-theme=light] body::before {
   display: none
@@ -1020,6 +1025,11 @@ html[data-theme=light] .ib {
 .th[data-v=executor] i { background: linear-gradient(90deg, #b4472b, #d8694a) }
 .th[data-v=analista] i { background: linear-gradient(90deg, #1f7389, #35a0bb) }
 .th[data-v=vigilante] i { background: linear-gradient(90deg, #1f7f4f, #34a96f) }
+.th[data-v=conhecimento] i { background: linear-gradient(90deg, #fbc532, color-mix(in srgb, #fbc532 75%, white)) }
+.th[data-v=morte] i { background: linear-gradient(90deg, #696969, color-mix(in srgb, #696969 75%, white)) }
+.th[data-v=sangue] i { background: linear-gradient(90deg, #780006, color-mix(in srgb, #780006 75%, white)) }
+.th[data-v=energia] i { background: linear-gradient(90deg, #d26dee, color-mix(in srgb, #d26dee 75%, white)) }
+.th[data-v=medo] i { background: linear-gradient(90deg, #e8feff, color-mix(in srgb, #e8feff 75%, white)) }
 
 .th.on {
   border-color: var(--ac2)

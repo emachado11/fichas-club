@@ -63,6 +63,7 @@ const N = (k, l, min, max, step = 1) => ({ k, l, t: 'num', min, max, step }), R 
 const C = (k, l) => ({ k, l, t: 'color' }), B = (k, l) => ({ k, l, t: 'bool' }), T = (k, l) => ({ k, l, t: 'text' }), S = (k, l, o) => ({ k, l, t: 'sel', o }), F = (k, l) => ({ k, l, t: 'font' });
 const POS = ['Posição e tamanho', [N('x', 'X', -3000, 5000), N('y', 'Y', -3000, 5000), N('w', 'Largura', 1, 5000), N('h', 'Altura', 1, 5000), N('rot', 'Rotação (°)', -180, 180), N('z', 'Camada (z)', 0, 99), R('opacity', 'Opacidade', 0, 1, .01)]];
 const TXT = ['Texto', [F('font', 'Fonte'), N('size', 'Tamanho (px)', 6, 400), S('weight', 'Peso', [[400, 'Normal'], [500, 'Médio'], [700, 'Negrito']]), C('color', 'Cor'), S('align', 'Alinhamento', [['left', 'Esquerda'], ['center', 'Centro'], ['right', 'Direita']]), N('ls', 'Espaço entre letras', -5, 40, .5), B('upper', 'MAIÚSCULAS'), N('sw', 'Contorno (px)', 0, 20, .5), C('sc', 'Cor do contorno')]];
+const NAME_TEXT = ['Texto', TXT[1].filter(f => f.k !== 'sw' && f.k !== 'sc')];
 const FX = [
     ['Efeito: brilho (glow)', [B('fx.glow.on', 'Ativar'), C('fx.glow.color', 'Cor'), N('fx.glow.blur', 'Desfoque (px)', 0, 80), N('fx.glow.str', 'Intensidade', 1, 5), B('fx.glow.pulse', 'Pulsar'), N('fx.glow.speed', 'Velocidade do pulso (s)', .3, 10, .1)]],
     ['Efeito: aberração cromática', [B('fx.chroma.on', 'Ativar'), N('fx.chroma.off', 'Deslocamento (px)', 0, 20, .5), C('fx.chroma.c1', 'Cor A'), C('fx.chroma.c2', 'Cor B')]],
@@ -77,7 +78,7 @@ const BAR = ['Barra', [S('mode', 'Exibir', [['both', 'Barra + texto'], ['bar', '
 export const SCHEMA = {
     bg: [POS, ['Painel', [C('color', 'Cor'), R('alpha', 'Opacidade da cor', 0, 1, .01), N('radius', 'Arredondamento', 0, 400), N('bw', 'Borda (px)', 0, 40), C('bc', 'Cor da borda')]], ...FX],
     portrait: [POS, ['Foto', [S('shape', 'Formato', [['circle', 'Círculo'], ['rounded', 'Arredondado'], ['square', 'Quadrado']]), N('radius', 'Arredondamento (px)', 0, 400), N('bw', 'Borda (px)', 0, 40), C('bc', 'Cor da borda'), B('bgOn', 'Fundo atrás da foto'), C('bgc', 'Cor do fundo'), B('clip', 'Recortar no formato')]], ...FX],
-    name: [POS, ['Nome', [N('maxc', 'Limite de caracteres', 1, 64), B('ell', 'Colocar … ao cortar')]], TXT, ...FX],
+    name: [POS, ['Nome', [N('maxc', 'Limite de caracteres', 1, 64), B('ell', 'Colocar … ao cortar')]], NAME_TEXT],
     pv: [POS, BAR, TXT, ...FX], pd: [POS, BAR, TXT, ...FX]
 };
 export const getPath = (o, p) => p.split('.').reduce((a, k) => a?.[k], o);
@@ -119,18 +120,18 @@ export function createPortrait(root, opt = {}) {
         if (f.flicker.on) { w.style.setProperty('--fi', f.flicker.int); an.push(`pg-flicker ${f.flicker.speed}s steps(1,end) infinite`) }
         w.style.animation = an.join(',')
     }
-    const font = (n, e) => { const s = n.style; s.fontFamily = `'${e.font}',sans-serif`; s.fontSize = e.size + 'px'; s.fontWeight = e.weight; s.color = e.color; s.letterSpacing = e.ls + 'px'; s.textTransform = e.upper ? 'uppercase' : 'none'; s.justifyContent = e.align == 'left' ? 'flex-start' : e.align == 'right' ? 'flex-end' : 'center'; s.textAlign = e.align; s.webkitTextStroke = e.sw > 0 ? `${e.sw}px ${e.sc}` : '0px transparent'; s.paintOrder = 'stroke fill' };
+    const font = (n, e, outline = true) => { const s = n.style; s.fontFamily = `'${e.font}',sans-serif`; s.fontSize = e.size + 'px'; s.fontWeight = e.weight; s.color = e.color; s.letterSpacing = e.ls + 'px'; s.textTransform = e.upper ? 'uppercase' : 'none'; s.justifyContent = e.align == 'left' ? 'flex-start' : e.align == 'right' ? 'flex-end' : 'center'; s.textAlign = e.align; s.webkitTextStroke = outline && e.sw > 0 ? `${e.sw}px ${e.sc}` : '0px transparent'; s.paintOrder = 'stroke fill'; s.textShadow = 'none' };
     function build() {
         root.className = 'pg'; root.style.width = L.w + 'px'; root.style.height = L.h + 'px'; root.innerHTML = ''; N = {};
         Object.entries(L.el).filter(([, e]) => e.on).sort((a, b) => a[1].z - b[1].z).forEach(([id, e]) => {
             const w = document.createElement('div'); w.className = 'pe'; w.dataset.id = id; place(w, e);
-            const x = document.createElement('div'); x.className = 'fxw'; effects(x, e.fx); w.append(x);
+            const x = document.createElement('div'); x.className = 'fxw'; effects(x, id == 'name' ? fx() : e.fx); w.append(x);
             const c = document.createElement('div'); c.className = 'pc'; x.append(c); const n = { w, c };
             if (id == 'bg') { c.style.background = rgba(e.color, e.alpha); c.style.borderRadius = e.radius + 'px'; c.style.border = `${e.bw}px solid ${e.bc}` }
             else if (id == 'portrait') {
                 c.style.borderRadius = e.shape == 'circle' ? '50%' : e.shape == 'rounded' ? e.radius + 'px' : '0'; c.style.border = `${e.bw}px solid ${e.bc}`; c.style.background = e.bgOn ? e.bgc : 'transparent'; if (!e.clip) c.style.overflow = 'visible';
                 n.img = document.createElement('img'); n.img.alt = ''; n.img.hidden = true; c.append(n.img)
-            } else if (id == 'name') { n.tx = document.createElement('div'); n.tx.className = 'tx nm'; font(n.tx, e); c.append(n.tx) }
+            } else if (id == 'name') { n.tx = document.createElement('div'); n.tx.className = 'tx nm'; font(n.tx, e, false); c.append(n.tx) }
             else {
                 const hasBar = e.mode != 'text'; c.style.position = 'absolute';
                 if (hasBar) {
@@ -141,7 +142,7 @@ export function createPortrait(root, opt = {}) {
                 }
                 if (e.mode != 'bar') { n.tx = document.createElement('div'); n.tx.className = 'tx'; font(n.tx, e); c.append(n.tx) }
             }
-            if (e.fx.scan.on) { const sc = document.createElement('div'); sc.className = 'scan'; sc.style.background = `repeating-linear-gradient(0deg,rgba(0,0,0,${e.fx.scan.op}) 0 1px,transparent 1px ${e.fx.scan.gap}px)`; c.append(sc) }
+            if (id !== 'name' && e.fx.scan.on) { const sc = document.createElement('div'); sc.className = 'scan'; sc.style.background = `repeating-linear-gradient(0deg,rgba(0,0,0,${e.fx.scan.op}) 0 1px,transparent 1px ${e.fx.scan.gap}px)`; c.append(sc) }
             N[id] = n; root.append(w)
         });
         D && patch(null)
@@ -158,7 +159,7 @@ export function createPortrait(root, opt = {}) {
                 s.cssText = 'position:absolute;background:' + g + ';' + (v ? `left:0;right:0;${c.dir == 'btt' ? 'bottom' : 'top'}:0;height:${p}%` : `top:0;bottom:0;${c.dir == 'ltr' ? 'left' : 'right'}:0;width:${p}%`)
             }
         });
-        const shake = (cls, k) => ['portrait', 'pv', 'pd', 'name', 'bg'].forEach(id => { const n = N[id]; if (n && e[id].fx[k].on) { n.w.classList.remove('hit', 'hitpd'); void n.w.offsetWidth; n.w.classList.add(cls); clearTimeout(hitT[id]); hitT[id] = setTimeout(() => n.w.classList.remove(cls), 700) } });
+        const shake = (cls, k) => ['portrait', 'pv', 'pd', 'bg'].forEach(id => { const n = N[id]; if (n && e[id].fx[k].on) { n.w.classList.remove('hit', 'hitpd'); void n.w.offsetWidth; n.w.classList.add(cls); clearTimeout(hitT[id]); hitT[id] = setTimeout(() => n.w.classList.remove(cls), 700) } });
         if (prev && (+D.pv < +prev.pv)) shake('hit', 'hit');
         if (prev && (+D.pd < +prev.pd)) shake('hitpd', 'hitpd')
     }

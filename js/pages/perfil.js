@@ -1,9 +1,55 @@
 /* Perfil: foto, nomes, @usuário, aparência, conta e amigos */
 import { guard, page, act, $, esc, toast, err, clip, modal, close } from '../common.js';
-import { auth, db, doc, writeBatch, getDoc, updatePassword, verifyBeforeUpdateEmail, reauthenticateWithCredential, EmailAuthProvider, sendPasswordResetEmail } from '../firebase.js';
+import { auth, db, doc, writeBatch, getDoc, getDocs, collection, query, where, deleteField, arrayRemove, updatePassword, verifyBeforeUpdateEmail, reauthenticateWithCredential, reauthenticateWithPopup, deleteUser, GoogleAuthProvider, EmailAuthProvider, sendPasswordResetEmail } from '../firebase.js';
 import { ME, setMe, savePriv, applyTheme, applyPalette, MODES, PALETTES, clean, validHandle, findUser, sendFriendRequest, answerFriendRequest, removeFriend, watchFriends, watchFriendRequests, avatar, getProfile } from '../profile.js';
 import { pickImage, openCropper } from '../cropper.js';
 import { refreshAvatar } from '../header.js';
+
+async function commitBatches(operations) {
+  for (let i = 0; i < operations.length; i += 450) {
+    const batch = writeBatch(db);
+    operations.slice(i, i + 450).forEach(add => add(batch));
+    await batch.commit()
+  }
+}
+
+async function deleteAccountData(uid) {
+  const [ownedCampaigns, memberCampaigns, sheets, friendships, incomingRequests, outgoingRequests, incomingInvites, outgoingInvites, usernames] = await Promise.all([
+    getDocs(query(collection(db, 'campaigns'), where('master', '==', uid))),
+    getDocs(query(collection(db, 'campaigns'), where('members', 'array-contains', uid))),
+    getDocs(query(collection(db, 'sheets'), where('owner', '==', uid))),
+    getDocs(query(collection(db, 'friendships'), where('members', 'array-contains', uid))),
+    getDocs(query(collection(db, 'friendRequests'), where('to', '==', uid))),
+    getDocs(query(collection(db, 'friendRequests'), where('from', '==', uid))),
+    getDocs(query(collection(db, 'invites'), where('to', '==', uid))),
+    getDocs(query(collection(db, 'invites'), where('from', '==', uid))),
+    getDocs(query(collection(db, 'usernames'), where('uid', '==', uid)))
+  ]);
+  const campaignIds = new Set(ownedCampaigns.docs.map(c => c.id));
+  const [campaignSheets, layouts] = await Promise.all([
+    Promise.all([...campaignIds].map(id => getDocs(query(collection(db, 'sheets'), where('campaign', '==', id))))),
+    Promise.all([...campaignIds].map(id => getDoc(doc(db, 'layouts', id))))
+  ]);
+  const operations = [], deleted = new Set();
+  const remove = ref => {
+    if (deleted.has(ref.path)) return;
+    deleted.add(ref.path);
+    operations.push(batch => batch.delete(ref))
+  };
+  campaignSheets.forEach(q => q.docs.forEach(sheet => {
+    if (sheet.data().owner !== uid) operations.push(batch => batch.update(sheet.ref, { campaign: deleteField() }))
+  }));
+  layouts.forEach(layout => { if (layout.exists()) remove(layout.ref) });
+  ownedCampaigns.docs.forEach(c => remove(c.ref));
+  memberCampaigns.docs.forEach(c => {
+    if (!campaignIds.has(c.id)) operations.push(batch => batch.update(c.ref, { members: arrayRemove(uid) }))
+  });
+  sheets.docs.forEach(sheet => remove(sheet.ref));
+  [friendships, incomingRequests, outgoingRequests, incomingInvites, outgoingInvites, usernames].forEach(q => q.docs.forEach(d => remove(d.ref)));
+  remove(doc(db, 'profiles', uid));
+  remove(doc(db, 'users', uid));
+  await commitBatches(operations)
+}
 
 guard(u => {
   let tab = location.hash.slice(1) || 'perfil', friends = [], friendRequests = { incoming: [], outgoing: [] };
@@ -22,6 +68,7 @@ guard(u => {
         `,
       conta: `<div class=pn><b class=cz>E-mail</b><p style="margin:0">${esc(u.email || '—')}</p>${pwd ? `<label class=fld><span>Novo e-mail</span><input id=ne type=email autocomplete=email></label><label class=fld><span>Senha atual</span><input id=cp1 type=password autocomplete=current-password></label><div><button data-a=chmail>Alterar e-mail</button></div><p class=hint>Enviamos um link de confirmação para o novo endereço; o e-mail só muda depois de confirmar.</p>` : '<p class=hint>Sua conta entra com o Google, então o e-mail é gerenciado por lá.</p>'}<p id=ms class=ok></p></div>
         ${pwd ? `<div class=pn><b class=cz>Senha</b><label class=fld><span>Senha atual</span><input id=cp2 type=password autocomplete=current-password></label><label class=fld><span>Nova senha</span><input id=np type=password autocomplete=new-password minlength=6></label><label class=fld><span>Repetir nova senha</span><input id=np2 type=password autocomplete=new-password></label><div class=row><button data-a=chpass>Alterar senha</button><button class=g data-a=reset>Enviar e-mail de redefinição</button></div><p id=ms2 class=ok></p></div>` : ''}
+        <div class=pn><b class=cz>Apagar perfil</b><p class=hint>Apaga sua conta, fichas, amizades e dados privados. Campanhas suas serão apagadas; fichas de outros jogadores serão mantidas e desvinculadas.</p><button class=danger data-a=delaccount style="justify-self:start">Apagar perfil</button></div>
         <div class=pn><button class=g data-a=out style="justify-self:start">Sair da conta</button></div>`,
       amigos: `<div class=pn><b class=cz>Solicitar amizade</b><div class=row><input id=fq placeholder="@usuario ou e-mail" style="flex:1 1 220px" autocapitalize=none><button data-a=addfr>Enviar solicitação</button></div><div class=row><button class=g data-a=mylink>Copiar meu link de amizade</button></div><p id=ms class=ok></p></div>
         <div class=pn><b class=cz>Solicitações recebidas (${friendRequests.incoming.length})</b>${friendRequests.incoming.map(r => `<div class=frow><span class=who>${avatar(r.fromProfile, 'sm')}<span class=mn><b>${esc(r.fromProfile.displayName)}</b><small>@${esc(r.fromProfile.username)}</small></span></span><span class=row><button data-a=acceptfr data-id="${esc(r.id)}" data-from="${esc(r.from)}">Aceitar</button><button class=g data-a=rejectfr data-id="${esc(r.id)}">Recusar</button></span></div>`).join('') || '<p class=hint>Nenhuma solicitação recebida.</p>'}</div>
@@ -65,6 +112,36 @@ guard(u => {
       try { await reauth($('#cp2').value); await updatePassword(auth.currentUser, $('#np').value); m(['Senha alterada ✓']);['#cp2', '#np', '#np2'].forEach(i => $(i).value = '') } catch (x) { m([x.code == 'auth/invalid-credential' || x.code == 'auth/wrong-password' ? 'Senha atual incorreta.' : err(x), 1]) }
     },
     reset: async () => { await sendPasswordResetEmail(auth, u.email); toast('E-mail de redefinição enviado') },
+    delaccount: () => modal(`<h3>Apagar perfil permanentemente?</h3><p>Essa ação não pode ser desfeita. Todas as suas fichas e campanhas serão apagadas. Fichas de outros jogadores serão preservadas.</p><label class=fld><span>Digite APAGAR para continuar</span><input id=delword autocomplete=off></label>${pwd ? '<label class=fld><span>Senha atual</span><input id=delpw type=password autocomplete=current-password></label>' : '<p class=hint>Você precisará confirmar sua identidade com o Google.</p>'}<p id=delstatus class=er></p><div class=row><button class=danger data-a=confirmdel>Apagar conta</button><button class=g data-a=close>Cancelar</button></div>`),
+    confirmdel: async t => {
+      const status = $('#delstatus');
+      if ($('#delword').value !== 'APAGAR') { status.textContent = 'Digite APAGAR exatamente como aparece para confirmar.'; return }
+      const current = auth.currentUser;
+      if (!current) throw new Error('Sua sessão expirou. Entre novamente para continuar.');
+      t.disabled = true;
+      status.className = 'hint'; status.textContent = 'Confirmando identidade e apagando seus dados…';
+      let cleanupStarted = false;
+      try {
+        if (pwd) {
+          if (!$('#delpw').value) throw new Error('Digite sua senha atual.');
+          await reauth($('#delpw').value)
+        } else if (u.providerData.some(p => p.providerId === 'google.com')) {
+          await reauthenticateWithPopup(current, new GoogleAuthProvider())
+        } else {
+          throw new Error('Não foi possível identificar o método de autenticação desta conta.')
+        }
+        cleanupStarted = true;
+        await deleteAccountData(u.uid);
+        await deleteUser(current);
+        try { localStorage.removeItem('theme'); localStorage.removeItem('palette') } catch { }
+        location.replace('index.html')
+      } catch (x) {
+        const detail = x?.code === 'auth/popup-closed-by-user' ? 'Autenticação cancelada.' : x?.code === 'auth/requires-recent-login' ? 'Entre novamente e tente apagar o perfil outra vez.' : err(x);
+        status.className = 'er';
+        status.textContent = `${cleanupStarted ? 'A exclusão não foi concluída; alguns dados podem já ter sido removidos. ' : ''}${detail}`;
+        t.disabled = false
+      }
+    },
     addfr: async () => {
       const p = await findUser($('#fq').value); if (!p) return msg('Ninguém encontrado com esse @ ou e-mail.', 1);
       await sendFriendRequest(u.uid, p.uid); $('#fq').value = ''; msg(`Solicitação enviada para @${p.username} ✓`)
