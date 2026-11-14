@@ -8,16 +8,6 @@
     color-scheme: dark
 }
 
-body[data-p=Analista] {
-    --ac: #1f7389;
-    --ac2: #35a0bb
-}
-
-body[data-p=Vigilante] {
-    --ac: #1f7f4f;
-    --ac2: #34a96f
-}
-
 * {
     box-sizing: border-box
 }

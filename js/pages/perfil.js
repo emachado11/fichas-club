@@ -1,13 +1,12 @@
-/* Perfil: foto, nomes, @usuário, aparência, idioma, conta e amigos */
+/* Perfil: foto, nomes, @usuário, aparência, conta e amigos */
 import { guard, page, act, $, esc, toast, err, clip, modal, close } from '../common.js';
 import { auth, db, doc, writeBatch, getDoc, updatePassword, verifyBeforeUpdateEmail, reauthenticateWithCredential, EmailAuthProvider, sendPasswordResetEmail } from '../firebase.js';
-import { ME, setMe, PRIV, savePriv, applyTheme, applyLang, THEMES, clean, validHandle, findUser, addFriend, removeFriend, watchFriends, avatar, getProfile } from '../profile.js';
+import { ME, setMe, savePriv, applyTheme, applyPalette, MODES, PALETTES, clean, validHandle, findUser, sendFriendRequest, answerFriendRequest, removeFriend, watchFriends, watchFriendRequests, avatar, getProfile } from '../profile.js';
 import { pickImage, openCropper } from '../cropper.js';
 import { refreshAvatar } from '../header.js';
 
-const LANGS = { 'pt-BR': 'Português (Brasil)', en: 'English', es: 'Español' };
 guard(u => {
-  let tab = location.hash.slice(1) || 'perfil', friends = [];
+  let tab = location.hash.slice(1) || 'perfil', friends = [], friendRequests = { incoming: [], outgoing: [] };
   const pwd = u.providerData.some(p => p.providerId === 'password');
   page('Perfil', `<div class=ptabs role=tablist>${[['perfil', 'Perfil'], ['aparencia', 'Aparência'], ['conta', 'Conta'], ['amigos', 'Amigos']].map(([k, t]) => `<button role=tab data-a=tab data-v=${k} id=t_${k}>${t}</button>`).join('')}</div><div class=pf2 id=pb></div>`, u);
   const msg = (t, bad) => { const e = $('#ms'); if (e) { e.textContent = t; e.className = bad ? 'er' : 'ok' } };
@@ -18,20 +17,24 @@ guard(u => {
         <label class=fld><span>Nome de exibição</span><input id=dn maxlength=32 value="${esc(me.displayName)}"></label>
         <label class=fld><span>@ de usuário</span><input id=un maxlength=20 value="${esc(me.username)}" autocapitalize=none autocomplete=off><small class=hint>3 a 20 caracteres: letras minúsculas, números, _ e .</small></label>
         <div><button data-a=saveprof>Salvar</button></div><p id=ms class=ok></p></div>`,
-      aparencia: `<div class=pn><b class=cz>Tema</b><div class=themes>${Object.entries(THEMES).map(([k, v]) => `<button class="th ${document.documentElement.dataset.theme == k ? 'on' : ''}" data-a=theme data-v=${k}><i></i>${v}</button>`).join('')}</div></div>
-        <div class=pn><label class=fld><span>Idioma</span><select id=lg>${Object.entries(LANGS).map(([k, v]) => `<option value=${k} ${(PRIV.lang || localStorage.lang || 'pt-BR') == k ? 'selected' : ''}>${v}</option>`).join('')}</select></label><p class=hint>A escolha fica salva na sua conta. A tradução dos textos do site ainda está em desenvolvimento: por enquanto a interface continua em português.</p></div>`,
+      aparencia: `<div class=pn><b class=cz>Modos:</b><div class="themes modes">${Object.entries(MODES).map(([k, v]) => `<button class="th ${document.documentElement.dataset.theme == k ? 'on' : ''}" data-a=theme data-v=${k}><i></i>${v}</button>`).join('')}</div></div>
+        <div class=pn><b class=cz>Temas:</b><div class="themes palettes">${Object.entries(PALETTES).map(([k, v]) => `<button class="th ${document.documentElement.dataset.palette == k ? 'on' : ''}" data-a=palette data-v=${k}><i></i>${v}</button>`).join('')}</div></div>
+        `,
       conta: `<div class=pn><b class=cz>E-mail</b><p style="margin:0">${esc(u.email || '—')}</p>${pwd ? `<label class=fld><span>Novo e-mail</span><input id=ne type=email autocomplete=email></label><label class=fld><span>Senha atual</span><input id=cp1 type=password autocomplete=current-password></label><div><button data-a=chmail>Alterar e-mail</button></div><p class=hint>Enviamos um link de confirmação para o novo endereço; o e-mail só muda depois de confirmar.</p>` : '<p class=hint>Sua conta entra com o Google, então o e-mail é gerenciado por lá.</p>'}<p id=ms class=ok></p></div>
         ${pwd ? `<div class=pn><b class=cz>Senha</b><label class=fld><span>Senha atual</span><input id=cp2 type=password autocomplete=current-password></label><label class=fld><span>Nova senha</span><input id=np type=password autocomplete=new-password minlength=6></label><label class=fld><span>Repetir nova senha</span><input id=np2 type=password autocomplete=new-password></label><div class=row><button data-a=chpass>Alterar senha</button><button class=g data-a=reset>Enviar e-mail de redefinição</button></div><p id=ms2 class=ok></p></div>` : ''}
         <div class=pn><button class=g data-a=out style="justify-self:start">Sair da conta</button></div>`,
-      amigos: `<div class=pn><b class=cz>Adicionar amigo</b><div class=row><input id=fq placeholder="@usuario ou e-mail" style="flex:1 1 220px" autocapitalize=none><button data-a=addfr>Adicionar</button></div><div class=row><button class=g data-a=mylink>Copiar meu link de amizade</button></div><p id=ms class=ok></p></div>
+      amigos: `<div class=pn><b class=cz>Solicitar amizade</b><div class=row><input id=fq placeholder="@usuario ou e-mail" style="flex:1 1 220px" autocapitalize=none><button data-a=addfr>Enviar solicitação</button></div><div class=row><button class=g data-a=mylink>Copiar meu link de amizade</button></div><p id=ms class=ok></p></div>
+        <div class=pn><b class=cz>Solicitações recebidas (${friendRequests.incoming.length})</b>${friendRequests.incoming.map(r => `<div class=frow><span class=who>${avatar(r.fromProfile, 'sm')}<span class=mn><b>${esc(r.fromProfile.displayName)}</b><small>@${esc(r.fromProfile.username)}</small></span></span><span class=row><button data-a=acceptfr data-id="${esc(r.id)}" data-from="${esc(r.from)}">Aceitar</button><button class=g data-a=rejectfr data-id="${esc(r.id)}">Recusar</button></span></div>`).join('') || '<p class=hint>Nenhuma solicitação recebida.</p>'}</div>
+        <div class=pn><b class=cz>Solicitações enviadas (${friendRequests.outgoing.length})</b>${friendRequests.outgoing.map(r => `<div class=frow><span class=who>${avatar(r.toProfile, 'sm')}<span class=mn><b>${esc(r.toProfile.displayName)}</b><small>@${esc(r.toProfile.username)}</small></span></span><button class=g data-a=cancelreq data-id="${esc(r.id)}" data-to="${esc(r.to)}">Cancelar</button></div>`).join('') || '<p class=hint>Nenhuma solicitação enviada.</p>'}</div>
         <div class=pn><b class=cz>Meus amigos (${friends.length})</b>${friends.map(p => `<div class=frow><span class=who>${avatar(p, 'sm')}<span class=mn><b>${esc(p.displayName)}</b><small>@${esc(p.username)}</small></span></span><button class=g data-a=rmfr data-u="${esc(p.uid)}" aria-label="Remover ${esc(p.displayName)}">Remover</button></div>`).join('') || '<p class=hint>Você ainda não tem amigos adicionados.</p>'}</div>`
     }; $('#pb').innerHTML = T[tab] || T.perfil
   };
   draw(); watchFriends(u.uid, f => { friends = f; if (tab == 'amigos') { const k = $('#fq')?.value; draw(); if (k && $('#fq')) $('#fq').value = k } });
+  watchFriendRequests(u.uid, r => { friendRequests = r; if (tab == 'amigos') { const k = $('#fq')?.value; draw(); if (k && $('#fq')) $('#fq').value = k } });
   addEventListener('hashchange', () => { tab = location.hash.slice(1) || 'perfil'; draw() });
   /* link de amizade: perfil.html?add=<uid> */
   const add = new URLSearchParams(location.search).get('add');
-  if (add && add !== u.uid) getProfile(add).then(p => { tab = 'amigos'; draw(); modal(`<h3>Adicionar amigo</h3><div class=row style="justify-content:flex-start">${avatar(p)}<span class=mn><b>${esc(p.displayName)}</b><small>@${esc(p.username)}</small></span></div><div class=row><button data-a=okadd data-u="${esc(add)}">Adicionar</button><button class=g data-a=close>Cancelar</button></div>`) });
+  if (add && add !== u.uid) getProfile(add).then(p => { tab = 'amigos'; draw(); modal(`<h3>Solicitar amizade</h3><div class=row style="justify-content:flex-start">${avatar(p)}<span class=mn><b>${esc(p.displayName)}</b><small>@${esc(p.username)}</small></span></div><div class=row><button data-a=okadd data-u="${esc(add)}">Enviar solicitação</button><button class=g data-a=close>Cancelar</button></div>`) });
   const reauth = pw => reauthenticateWithCredential(auth.currentUser, EmailAuthProvider.credential(u.email, pw));
   const cropSave = async src => {
     const d = await openCropper(src, { aspect: 1, round: true, out: [256, 256], title: 'Foto de perfil' }); if (!d) return;
@@ -51,6 +54,7 @@ guard(u => {
       b.update(doc(db, 'profiles', u.uid), { displayName: dn, username: un }); await b.commit(); setMe({ displayName: dn, username: un }); refreshAvatar(); msg('Perfil salvo ✓')
     },
     theme: t => { applyTheme(t.dataset.v); savePriv(u.uid, { theme: t.dataset.v }).catch(() => { }); draw() },
+    palette: t => { applyPalette(t.dataset.v); savePriv(u.uid, { palette: t.dataset.v }).catch(() => { }); draw() },
     chmail: async () => {
       const ne = $('#ne').value.trim(); if (!ne || !$('#cp1').value) return msg('Preencha o novo e-mail e a senha atual.', 1);
       try { await reauth($('#cp1').value); await verifyBeforeUpdateEmail(auth.currentUser, ne); msg('Enviamos um link de confirmação para ' + ne + '.') } catch (x) { msg(x.code == 'auth/invalid-credential' || x.code == 'auth/wrong-password' ? 'Senha atual incorreta.' : err(x), 1) }
@@ -63,11 +67,13 @@ guard(u => {
     reset: async () => { await sendPasswordResetEmail(auth, u.email); toast('E-mail de redefinição enviado') },
     addfr: async () => {
       const p = await findUser($('#fq').value); if (!p) return msg('Ninguém encontrado com esse @ ou e-mail.', 1);
-      await addFriend(u.uid, p.uid); $('#fq').value = ''; msg(`@${p.username} adicionado ✓`)
+      await sendFriendRequest(u.uid, p.uid); $('#fq').value = ''; msg(`Solicitação enviada para @${p.username} ✓`)
     },
-    okadd: async t => { await addFriend(u.uid, t.dataset.u); close(); toast('Amigo adicionado'); history.replaceState(null, '', 'perfil.html#amigos') },
+    okadd: async t => { const p = await getProfile(t.dataset.u); await sendFriendRequest(u.uid, t.dataset.u); close(); toast(`Solicitação enviada para @${p.username}`); history.replaceState(null, '', 'perfil.html#amigos') },
+    acceptfr: async t => { await answerFriendRequest({ id: t.dataset.id, from: t.dataset.from, to: u.uid }, u.uid, true); toast('Solicitação aceita; vocês agora são amigos.') },
+    rejectfr: async t => { await answerFriendRequest({ id: t.dataset.id, to: u.uid }, u.uid, false); toast('Solicitação recusada.') },
+    cancelreq: async t => { await answerFriendRequest({ id: t.dataset.id, from: u.uid, to: t.dataset.to }, u.uid, false); toast('Solicitação cancelada.') },
     rmfr: async t => { if (confirm('Remover este amigo?')) await removeFriend(u.uid, t.dataset.u) },
     mylink: () => clip(new URL('perfil.html?add=' + u.uid, location.href).href, 'Link de amizade copiado')
   });
-  $('#app').addEventListener('change', e => { if (e.target.id == 'lg') { const v = e.target.value; applyLang(v); savePriv(u.uid, { lang: v }).catch(() => { }); toast('Idioma salvo') } })
 });

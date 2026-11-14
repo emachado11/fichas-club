@@ -119,7 +119,7 @@ export function createPortrait(root, opt = {}) {
         if (f.flicker.on) { w.style.setProperty('--fi', f.flicker.int); an.push(`pg-flicker ${f.flicker.speed}s steps(1,end) infinite`) }
         w.style.animation = an.join(',')
     }
-    const font = (n, e) => { const s = n.style; s.fontFamily = `'${e.font}',sans-serif`; s.fontSize = e.size + 'px'; s.fontWeight = e.weight; s.color = e.color; s.letterSpacing = e.ls + 'px'; s.textTransform = e.upper ? 'uppercase' : 'none'; s.justifyContent = e.align == 'left' ? 'flex-start' : e.align == 'right' ? 'flex-end' : 'center'; s.textAlign = e.align; if (e.sw > 0) { s.webkitTextStroke = e.sw + 'px ' + e.sc; s.paintOrder = 'stroke fill' } };
+    const font = (n, e) => { const s = n.style; s.fontFamily = `'${e.font}',sans-serif`; s.fontSize = e.size + 'px'; s.fontWeight = e.weight; s.color = e.color; s.letterSpacing = e.ls + 'px'; s.textTransform = e.upper ? 'uppercase' : 'none'; s.justifyContent = e.align == 'left' ? 'flex-start' : e.align == 'right' ? 'flex-end' : 'center'; s.textAlign = e.align; s.webkitTextStroke = e.sw > 0 ? `${e.sw}px ${e.sc}` : '0px transparent'; s.paintOrder = 'stroke fill' };
     function build() {
         root.className = 'pg'; root.style.width = L.w + 'px'; root.style.height = L.h + 'px'; root.innerHTML = ''; N = {};
         Object.entries(L.el).filter(([, e]) => e.on).sort((a, b) => a[1].z - b[1].z).forEach(([id, e]) => {

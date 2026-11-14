@@ -1,8 +1,8 @@
 # Atualização — The Club
 
-**Antes de usar, publique o arquivo `firestore.rules` no Firebase** (Firestore → Regras → colar → Publicar).
-Ele ganhou as coleções novas: `profiles`, `usernames`, `users`, `friendships` e `invites`.
-Sem isso, perfil, amigos e convites dão "Sem permissão no Firestore".
+**Depois de atualizar, publique o arquivo `firestore.rules` no Firebase** (Firestore → Regras → colar → Publicar).
+Ele inclui as coleções `profiles`, `usernames`, `users`, `friendRequests`, `friendships` e `invites`.
+Erros de permissão podem indicar uma regra que negou a operação, não necessariamente que as regras não foram publicadas.
 
 Arquivos novos: `perfil.html`, `css/app.css`, `img/logo.png`, `js/header.js`, `js/profile.js`, `js/ui.js`, `js/cropper.js`, `js/theme.js`, `js/pages/perfil.js`.
 

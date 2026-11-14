@@ -1,6 +1,25 @@
-import { guard, page, act, $, esc, err } from '../common.js';
-import { db, collection, query, where, onSnapshot } from '../firebase.js';
+import { guard, page, act, $, esc, err, toast } from '../common.js';
+import { db, collection, query, where, onSnapshot, getDocs, getDoc, doc, writeBatch, deleteField } from '../firebase.js';
 import { fab } from '../ui.js';
+
+async function deleteCampaign(id, uid) {
+    const [sheets, invites, layout] = await Promise.all([
+        getDocs(query(collection(db, 'sheets'), where('campaign', '==', id))),
+        getDocs(query(collection(db, 'invites'), where('campaign', '==', id), where('from', '==', uid))),
+        getDoc(doc(db, 'layouts', id))
+    ]);
+    const operations = [
+        ...sheets.docs.map(sheet => batch => batch.update(sheet.ref, { campaign: deleteField() })),
+        ...invites.docs.map(invite => batch => batch.delete(invite.ref)),
+        ...(layout.exists() ? [batch => batch.delete(layout.ref)] : []),
+        batch => batch.delete(doc(db, 'campaigns', id))
+    ];
+    for (let i = 0; i < operations.length; i += 450) {
+        const batch = writeBatch(db);
+        operations.slice(i, i + 450).forEach(add => add(batch));
+        await batch.commit()
+    }
+}
 
 guard(u => {
     let all = [], tab = sessionStorage.ctab || 'play';
@@ -10,9 +29,16 @@ guard(u => {
         $('#tp').textContent = `Como jogador (${P.length})`; $('#tm').textContent = `Como Mestre (${M.length})`;
         $('#tp').classList.toggle('on', tab == 'play'); $('#tm').classList.toggle('on', tab == 'master');
         $('#tp').setAttribute('aria-selected', tab == 'play'); $('#tm').setAttribute('aria-selected', tab == 'master');
-        $('#ls').innerHTML = L.map(c => `<a class=cmp href="campanha.html?id=${esc(c.id)}"><div class=crt><span class=cmeta>${tab == 'master' ? 'Você é o mestre' : 'Jogador'} · ${(c.members || []).length} ${(c.members || []).length == 1 ? 'participante' : 'participantes'}</span><h3>${esc(c.name)}</h3><p>${esc(c.desc || 'Sem descrição.')}</p></div><div class=crb style="${c.banner ? `background-image:url('${esc(c.banner)}')` : ''}"></div></a>`).join('')
+        $('#ls').innerHTML = L.map(c => `<div class=cmp-wrap><a class=cmp href="campanha.html?id=${esc(c.id)}"><div class=crt><span class=cmeta>${tab == 'master' ? 'Você é o mestre' : 'Jogador'} · ${(c.members || []).length} ${(c.members || []).length == 1 ? 'participante' : 'participantes'}</span><h3>${esc(c.name)}</h3><p>${esc(c.desc || 'Sem descrição.')}</p></div><div class=crb style="${c.banner ? `background-image:url('${esc(c.banner)}')` : ''}"></div></a>${tab == 'master' ? `<button class="camp-delete g" data-a=delcamp data-id="${esc(c.id)}">Apagar campanha</button>` : ''}</div>`).join('')
             || `<div class=empty-s><p>${tab == 'master' ? 'Você ainda não criou nenhuma campanha.' : 'Você ainda não participa de nenhuma campanha como jogador.'}</p><p>${tab == 'master' ? '<a href=campanha-nova.html>Criar campanha</a>' : 'Peça um convite ao seu mestre — ele aparece no envelope ✉ do topo.'}</p></div>`
     };
     onSnapshot(query(collection(db, 'campaigns'), where('members', 'array-contains', u.uid)), q => { all = q.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => a.name.localeCompare(b.name, 'pt-BR')); draw() }, x => $('#ls').textContent = err(x));
-    act({ tab: t => { tab = t.dataset.v; sessionStorage.ctab = tab; draw() } })
+    act({
+        tab: t => { tab = t.dataset.v; sessionStorage.ctab = tab; draw() },
+        delcamp: async t => {
+            if (!confirm('Apagar esta campanha? As fichas serão mantidas, mas desvinculadas; convites e layout serão removidos.')) return;
+            await deleteCampaign(t.dataset.id, u.uid);
+            toast('Campanha apagada.')
+        }
+    })
 });

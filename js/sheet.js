@@ -35,7 +35,7 @@ export function mountSheet(root, s, o = {}) {
   <div class=pn><div class=mundo role=group aria-label="Mundo">${Object.keys(MUNDOS).map(m => `<button class="${s.mundo == m ? 'on' : ''}" data-a=mundo data-v=${m} aria-pressed=${s.mundo == m}>${MUNDOS[m]}</button>`).join('')}</div><div class=ttl>PERÍCIAS</div><div class=skl>${SKL.map(([n, k]) => `<div class=sk><span>${n}</span><select data-sk="${esc(n)}">${D.map((d, j) => `<option value=${j} ${(s.sk[n] || 0) == j ? 'selected' : ''}>${d}</option>`).join('')}</select><b>${D[a[k]]}</b><em>${AN[k]}</em></div>`).join('')}</div></div>
   <div style="display:grid;gap:12px"><div class=pn><div class=row style="justify-content:space-between"><b class=cz>Pontos de relação</b><button data-a=addrel>+</button></div><div class=rels>${s.rel.map((r, i) => `<div class=rc><div class=ph data-a=relph data-i=${i} style="${r.img ? `background-image:url('${esc(r.img)}')` : ''}">${r.img ? '' : 'Clique para adicionar uma foto.'}</div><input data-r=${i} value="${esc(r.name)}" maxlength=20 placeholder="Nome aqui"><div class=dots>${[0, 1, 2].map(j => `<div class="dot ${r.pts > j ? 'p' : r.pts < 0 && -r.pts > j ? 'n' : ''}" data-dot=${i}:${j}>${r.pts < 0 && -r.pts > j ? '×' : ''}</div>`).join('')}</div><button class=g data-a=rmrel data-i=${i}>Remover</button></div>`).join('')}</div></div>
   <div class=pn><div class=tabs>${Object.keys(TABN).map(t => `<button class="${tab == t ? 'on' : ''}" data-a=tab data-v=${t}>${TABN[t]}</button>`).join('')}${tab != 'outros' ? '<button data-a=cat style="margin-left:auto">+</button>' : ''}</div>
-  <div class=box>${tab == 'outros' ? `<textarea class=ot data-k=outros placeholder="Anotações...">${esc(s.outros)}</textarea>` : L.length ? L.map((x, i) => `<div class=it><b>${esc(x[0])}</b><p>${esc(x[1])}</p><button class=g data-a=rm data-i=${i}>×</button></div>`).join('') : `<p class=mt>Adicione itens com o botão +.</p>`}</div></div></div></div>`
+  <div class=box>${tab == 'outros' ? `<textarea class=ot data-k=outros placeholder="Anotações...">${esc(s.outros)}</textarea>` : L.length ? L.map((x, i) => `<div class=it><b>${esc(x.name)}</b><p>${esc(x.description)}</p><button class=g data-a=rm data-i=${i}>×</button></div>`).join('') : `<p class=mt>Adicione itens com o botão +.</p>`}</div></div></div></div>`
     }
 
     /* ===== Foto do agente ===== */
@@ -93,9 +93,9 @@ export function mountSheet(root, s, o = {}) {
         cur: t => upd(s => { const k = t.dataset.k; s[k] = Math.min(s[k + 'Max'], s[k] + +t.dataset.d) }),
         mundo: t => upd(s => s.mundo = t.dataset.v),
         tab: t => { tab = t.dataset.v; render() }, rm: t => upd(s => s[tab].splice(+t.dataset.i, 1)),
-        cat: () => modal(`<h3>${TABN[tab]}</h3>${CAT[tab].map((x, i) => `<button class=cat data-a=addcat data-i=${i}>${x[0]}<small>${x[1]}</small></button>`).join('')}<h3>Criar nova</h3><input id=nn placeholder=Nome><textarea id=nd rows=3 placeholder=Descrição></textarea><button data-a=addnew>Adicionar</button>`),
-        addcat: t => { upd(s => s[tab].push([...CAT[tab][+t.dataset.i]])); close() },
-        addnew: () => { const n = $('#nn').value.trim(); if (!n) return; upd(s => s[tab].push([n, $('#nd').value])); close() },
+        cat: () => modal(`<h3>${TABN[tab]}</h3>${CAT[tab].map((x, i) => `<button class=cat data-a=addcat data-i=${i}>${x.name}<small>${x.description}</small></button>`).join('')}<h3>Criar nova</h3><input id=nn placeholder=Nome><textarea id=nd rows=3 placeholder=Descrição></textarea><button data-a=addnew>Adicionar</button>`),
+        addcat: t => { const x = CAT[tab][+t.dataset.i]; upd(s => s[tab].push({ ...x })); close() },
+        addnew: () => { const name = $('#nn').value.trim(); if (!name) return; upd(s => s[tab].push({ name, description: $('#nd').value })); close() },
         addrel: () => upd(s => s.rel.push({ name: '', img: '', pts: 0 })), rmrel: t => upd(s => s.rel.splice(+t.dataset.i, 1)),
         relph: t => pick(async f => { const u = await small(await rd(f)); upd(s => s.rel[+t.dataset.i].img = u) }),
         photo: () => photo(),

@@ -6,13 +6,18 @@ import { fab, sheetCard } from '../ui.js';
 
 const ms = x => x?.updated?.toMillis?.() || 0;
 guard(async u => {
-    page('', `<div id=hero></div><div class=sec><h3>Fichas recentes</h3><a href=fichas.html>Ver todas</a></div><div id=rec class=grid></div>${fab([{ href: 'fichas.html', label: 'Ver Fichas' }, { href: 'campanhas.html', label: 'Ver Campanhas' }])}`, u);
+    page('', `<div id=hero></div><div class=sec><h3>Fichas recentes</h3><a href=fichas.html>Ver todas</a></div><div id=rec class=grid></div>${fab([{ href: 'ficha-nova.html', label: 'Criar Ficha' }, { href: 'campanha-nova.html', label: 'Criar Campanha' }])}`, u);
     const camp = async () => {
         if (PRIV.lastCampaign) { try { const d = await getDoc(doc(db, 'campaigns', PRIV.lastCampaign)); if (d.exists() && (d.data().members || []).includes(u.uid)) return { id: d.id, ...d.data() } } catch { } }
         try { const q = await getDocs(query(collection(db, 'campaigns'), where('members', 'array-contains', u.uid))); return q.docs[0] ? { id: q.docs[0].id, ...q.docs[0].data() } : null } catch { return null }
     };
     const sheets = async () => {
-        const out = [], seen = new Set(), add = d => { if (d.exists() && !seen.has(d.id) && out.length < 3) { seen.add(d.id); out.push({ id: d.id, ...d.data() }) } };
+        const out = [], seen = new Set(), add = d => {
+            if (!d.exists() || seen.has(d.id) || out.length >= 3) return;
+            const sheet = { id: d.id, ...d.data() };
+            if (sheet.owner !== u.uid) return;
+            seen.add(d.id); out.push(sheet)
+        };
         for (const id of (PRIV.recent || []).slice(0, 6)) { if (out.length >= 3) break; try { add(await getDoc(doc(db, 'sheets', id))) } catch { } }
         if (out.length < 3) try { (await getDocs(query(collection(db, 'sheets'), where('owner', '==', u.uid)))).docs.sort((a, b) => ms(b.data()) - ms(a.data())).forEach(add) } catch { }
         return out

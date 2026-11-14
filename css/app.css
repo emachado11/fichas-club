@@ -13,8 +13,6 @@
 }
 
 html[data-theme=light] {
-  --ac: #b4472b;
-  --ac2: #a63a20;
   --ln: #cbd3d6;
   --pn: #ffffff;
   --tx: #1b2225;
@@ -30,40 +28,16 @@ html[data-theme=light] {
   color-scheme: light
 }
 
-html[data-theme=black] {
-  --ln: #1e1e1e;
-  --pn: #0a0a0a;
-  --in: #000;
-  --in2: #050505;
-  --gb: #151515;
-  --gb2: #0f0f0f;
-  --gb3: #131313;
-  --bgp: rgba(0, 0, 0, .86);
-  --bg0: #000;
-  --pop: rgba(4, 4, 4, .98)
-}
+html[data-palette=executor] { --ac: #b4472b; --ac2: #d8694a }
+html[data-palette=analista] { --ac: #1f7389; --ac2: #35a0bb }
+html[data-palette=vigilante] { --ac: #1f7f4f; --ac2: #34a96f }
 
-html[data-theme=light] body[data-p=Analista] {
-  --ac: #1f7389;
-  --ac2: #17607a
-}
-
-html[data-theme=light] body[data-p=Vigilante] {
-  --ac: #1f7f4f;
-  --ac2: #176a41
-}
-
-html[data-theme=light] body::before,
-html[data-theme=black] body::before {
+html[data-theme=light] body::before {
   display: none
 }
 
 html[data-theme=light] body::after {
   background: radial-gradient(ellipse at 20% 0, color-mix(in srgb, var(--ac) 14%, transparent), transparent 65%)
-}
-
-html[data-theme=black] body::after {
-  background: none
 }
 
 html[data-theme=light] .logo img {
@@ -137,7 +111,7 @@ small {
 }
 
 .logo img {
-  height: 100%;
+  height: 40px;
   width: auto;
   display: block
 }
@@ -145,29 +119,38 @@ small {
 .hnav {
   display: flex;
   gap: 4px;
-  flex: 1
+  flex: 1;
+  height: 100%;
+  align-items: stretch
 }
 
 .hnav a {
-  padding: 8px 14px;
-  border-radius: 6px;
+  min-width: 76px;
+  padding: 5px 12px;
+  border-radius: 8px;
   text-decoration: none;
   color: var(--mt);
-  font-family: Cinzel, serif;
-  font-weight: 700;
-  font-size: 15px;
-  border: 0
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  font: 700 12px Cinzel, serif;
+  border: 0;
+  transition: background .15s, color .15s
 }
 
-.hnav a:hover {
+.hnav a:hover,
+.hact .ib:hover,
+.hp:hover {
   color: var(--tx);
   background: var(--gb2)
 }
 
-.hnav a.on {
-  color: var(--tx);
-  background: var(--gb);
-  box-shadow: inset 0 -2px var(--ac2)
+.hnav a.on,
+.hp.on {
+  color: var(--ac2);
+  background: var(--gb)
 }
 
 .hact {
@@ -178,22 +161,28 @@ small {
 }
 
 .ib {
-  width: 42px;
-  height: 42px;
-  padding: 0;
-  display: grid;
-  place-items: center;
+  min-width: 76px;
+  height: 100%;
+  padding: 5px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
   position: relative;
   background: none;
-  border-radius: 50%;
-  color: var(--tx)
+  border-radius: 8px;
+  color: var(--mt);
+  font: 700 12px Cinzel, serif;
+  transition: background .15s, color .15s
 }
 
-.ib:hover {
-  background: var(--gb)
+.act-label {
+  white-space: nowrap
 }
 
 .ib svg,
+.hnav svg,
 #bnav svg {
   width: 22px;
   height: 22px;
@@ -210,8 +199,8 @@ html[data-theme=light] .ib {
 
 .badge {
   position: absolute;
-  top: 3px;
-  right: 2px;
+  top: 4px;
+  right: calc(50% - 22px);
   min-width: 18px;
   height: 18px;
   padding: 0 4px;
@@ -364,17 +353,28 @@ html[data-theme=light] .ib {
 }
 
 .hp {
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  border: 0
+  min-width: 52px;
+  height: 100%;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: 8px;
+  color: var(--mt);
+  text-decoration: none;
+  font: 700 12px Cinzel, serif;
+  transition: background .15s, color .15s
 }
 
 .hp:hover .av,
 .hp.on .av {
-  border-color: var(--ac2)
+  border-color: var(--ac)
+}
+
+.hp .av {
+  width: 44px;
+  height: 44px
 }
 
 .av.xl {
@@ -779,6 +779,10 @@ html[data-theme=light] .ib {
   gap: 14px
 }
 
+.cmp-wrap {
+  position: relative
+}
+
 .cmp {
   display: grid;
   grid-template-columns: 1fr minmax(220px, 34%);
@@ -791,6 +795,14 @@ html[data-theme=light] .ib {
   text-decoration: none;
   color: var(--tx);
   transition: border-color .15s
+}
+
+.camp-delete {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 1;
+  font-size: 14px
 }
 
 .cmp:hover {
@@ -971,6 +983,14 @@ html[data-theme=light] .ib {
   gap: 10px
 }
 
+.themes.modes {
+  grid-template-columns: repeat(2, minmax(0, 1fr))
+}
+
+.themes.palettes {
+  grid-template-columns: repeat(3, minmax(0, 1fr))
+}
+
 .th {
   border: 2px solid var(--ln);
   border-radius: 10px;
@@ -997,9 +1017,9 @@ html[data-theme=light] .ib {
   background: linear-gradient(135deg, #fff, #dfe6e8)
 }
 
-.th[data-v=black] i {
-  background: #000
-}
+.th[data-v=executor] i { background: linear-gradient(90deg, #b4472b, #d8694a) }
+.th[data-v=analista] i { background: linear-gradient(90deg, #1f7389, #35a0bb) }
+.th[data-v=vigilante] i { background: linear-gradient(90deg, #1f7f4f, #34a96f) }
 
 .th.on {
   border-color: var(--ac2)
@@ -1106,6 +1126,33 @@ input[type=search] {
 
   .hin {
     gap: 8px
+  }
+
+  .hact {
+    gap: 0
+  }
+
+  .hact .ib {
+    min-width: 42px;
+    padding: 4px
+  }
+
+  .hact .act-label {
+    display: none
+  }
+
+  .hp {
+    min-width: 42px;
+    padding: 4px
+  }
+
+  .hp .av {
+    width: 38px;
+    height: 38px
+  }
+
+  .badge {
+    right: 2px
   }
 
   .logo {

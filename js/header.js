@@ -22,10 +22,10 @@ export function mountHeader(u) {
   bn.innerHTML = NAV.map(([href, t, k]) => `<a href=${href} class="${isOn(k) ? 'on' : ''}">${IC[k]}<span>${t}</span></a>`).join('');
   h.innerHTML = `<div class=hin>
   <a class=logo href=painel.html aria-label="The Club — início"><img src="img/logo.png" alt="The Club"></a>
-  <nav class=hnav>${NAV.map(([href, t, k]) => `<a href=${href} class="${isOn(k) ? 'on' : ''}">${t}</a>`).join('')}</nav>
+  <nav class=hnav>${NAV.map(([href, t, k]) => `<a href=${href} class="${isOn(k) ? 'on' : ''}">${IC[k]}<span>${t}</span></a>`).join('')}</nav>
   <div class=hact>${!u ? '<a class=btn href=index.html>Entrar</a>' : ''}
-    ${!u ? '<template>' : ''}<div class=hd data-h=fr><button class=ib data-hd=fr aria-label="Amigos" aria-expanded=false>${IC.friends}</button><div class=menu role=menu><h4>Amigos</h4><div class=ml id=hfr><p class=mt>Carregando…</p></div><a class=mf href="perfil.html#amigos">Gerenciar amigos</a></div></div>
-    <div class=hd data-h=inv><button class=ib data-hd=inv aria-label="Convites">${IC.mail}<i class=badge id=hbd hidden></i></button><div class=menu role=menu><h4>Convites para campanhas</h4><div class=ml id=hinv><p class=mt>Carregando…</p></div></div></div>
+    ${!u ? '<template>' : ''}<div class=hd data-h=fr><button class=ib data-hd=fr aria-label="Amigos" aria-expanded=false>${IC.friends}<span class=act-label>Amigos</span></button><div class=menu role=menu><h4>Amigos</h4><div class=ml id=hfr><p class=mt>Carregando…</p></div><a class=mf href="perfil.html#amigos">Gerenciar amigos</a></div></div>
+    <div class=hd data-h=inv><button class=ib data-hd=inv aria-label="Convites" aria-expanded=false>${IC.mail}<span class=act-label>Convites</span><i class=badge id=hbd hidden></i></button><div class=menu role=menu><h4>Convites para campanhas</h4><div class=ml id=hinv><p class=mt>Carregando…</p></div></div></div>
     <a class="hp ${/perfil/.test(location.pathname) ? 'on' : ''}" href=perfil.html aria-label="Meu perfil" title="Meu perfil">${avatar(ME || { displayName: u?.email })}</a>${!u ? '</template>' : ''}
   </div></div>`;
   h.onclick = e => {

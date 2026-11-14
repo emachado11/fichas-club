@@ -15,9 +15,9 @@ export const MUNDOS = { moderno: 'Moderno', medieval: 'Medieval' };
 const LEG = [["ACROBACIA"], ["MÁQUINAS", "ANIMAIS"], ["APTIDÃO"], ["ATLETISMO"], ["OCULTISMO", "BRUXARIA"], ["PERSUASÃO", "CARISMA"], ["CRIME"], ["DISCIPLINA"], ["ENGANAÇÃO"], ["FURTIVIDADE"], ["PESQUISA", "INSPECIONAR"], ["INTIMIDAÇÃO", "INTIMIDAR"], ["INTUIÇÃO"], ["LUTA"], ["MEDICINA"], ["TECNOLOGIA", "OFÍCIO"], ["PERCEPÇÃO"], ["PONTARIA"], ["SOBREVIVÊNCIA"], ["VIGOR"]];
 export const PERF = { Executor: "Você age primeiro e pensa depois. E, se não der certo da primeira vez, tenta de novo até conseguir, vencendo pela força de sua perseverança.", Analista: "Você observa, entende e se prepara, para só então agir. Pode demorar para tomar uma atitude, mas quando o faz, é com a maior precisão possível.", Vigilante: "Você está sempre atento aos arredores, aproveitando as brechas perfeitas para agir primeiro. Se adapta a imprevistos e não tem problemas em tomar decisões sob pressão." };
 export const CAT = {
-  hab: [["Reflexos rápidos", "Uma vez por cena, age antes de todos."], ["Olhar clínico", "+1 passo em Percepção ao examinar um alvo."], ["Voz firme", "Pode acalmar aliados em pânico."]],
-  equip: [["Pistola leve", "Dano curto, fácil de ocultar."], ["Faca de combate", "Dano corpo a corpo discreto."], ["Colete reforçado", "Reduz o dano recebido."]],
-  itens: [["Kit de primeiros socorros", "Estabiliza um aliado ferido."], ["Lanterna", "Ilumina ambientes escuros."], ["Cordas e ganchos", "Auxilia escaladas."]]
+  hab: [{ name: "Reflexos rápidos", description: "Uma vez por cena, age antes de todos." }, { name: "Olhar clínico", description: "+1 passo em Percepção ao examinar um alvo." }, { name: "Voz firme", description: "Pode acalmar aliados em pânico." }],
+  equip: [{ name: "Pistola leve", description: "Dano curto, fácil de ocultar." }, { name: "Faca de combate", description: "Dano corpo a corpo discreto." }, { name: "Colete reforçado", description: "Reduz o dano recebido." }],
+  itens: [{ name: "Kit de primeiros socorros", description: "Estabiliza um aliado ferido." }, { name: "Lanterna", description: "Ilumina ambientes escuros." }, { name: "Cordas e ganchos", description: "Auxilia escaladas." }]
 };
 export const TABN = { hab: "Habilidades", equip: "Equipamentos", itens: "Itens", outros: "Outros" };
 export const blank = () => ({ name: "Novo Agente", perfil: "Executor", ocup: "", nivel: 1, mundo: "moderno", a: { f: 1, m: 1, e: 1 }, pv: 6, pvMax: 6, pd: 6, pdMax: 6, img: {}, crop: { z: 1, x: 0, y: 0 }, sk: {}, rel: [], hab: [], equip: [], itens: [], outros: "", campaign: null, obs: { useCampaign: true, layout: null } });
@@ -26,6 +26,13 @@ export function migrate(s) {
   const b = blank();
   s.a = { ...b.a, ...(s.a || {}) }; s.img = s.img || {}; s.rel = s.rel || []; s.mundo = SKILLS[s.mundo] ? s.mundo : 'moderno';
   s.crop = { ...b.crop, ...(s.crop || {}) }; s.obs = { ...b.obs, ...(s.obs || {}) };
+  for (const k of ['hab', 'equip', 'itens']) {
+    s[k] = (Array.isArray(s[k]) ? s[k] : []).map(x => Array.isArray(x)
+      ? { name: String(x[0] || ''), description: String(x[1] || '') }
+      : x && typeof x === 'object'
+        ? { name: String(x.name || ''), description: String(x.description || '') }
+        : { name: String(x || ''), description: '' })
+  }
   const ks = Object.keys(s.sk || {});
   if (ks.length && ks.every(k => /^\d+$/.test(k))) { const n = {}; ks.forEach(k => (LEG[+k] || []).forEach(nm => n[nm] = s.sk[k])); s.sk = n } else s.sk = s.sk || {};
   return s
@@ -45,7 +52,7 @@ export const toast = (m, bad) => { const t = $('#toast'); t.textContent = m; t.s
 export const modal = h => { $('#modal').innerHTML = `<div class=mb>${h}</div>`; $('#modal').classList.add('on') };
 export const close = () => $('#modal').classList.remove('on');
 export const clip = (s, m) => navigator.clipboard.writeText(s).then(() => toast(m));
-export const err = e => e?.code === 'permission-denied' || /permissions/i.test(e?.message || '') ? 'Sem permissão no Firestore. Publique as regras do arquivo firestore.rules.' : (e?.code || e?.message || String(e));
+export const err = e => e?.code === 'permission-denied' || /permissions/i.test(e?.message || '') ? 'O Firestore negou a permissão para esta ação.' : (e?.code || e?.message || String(e));
 export const guard = cb => onAuthStateChanged(auth, async u => { if (u) { try { await ensureProfile(u) } catch { } cb(u) } else { sessionStorage.next = location.href; location.href = 'index.html' } });
 export function page(title, html, u) {
   initDice(); mountHeader(u);
@@ -75,8 +82,15 @@ function hasAlpha(c) {
   return false
 }
 const WEBP = (() => { try { return document.createElement('canvas').toDataURL('image/webp').startsWith('data:image/webp') } catch { return false } })();
-/* Codifica o canvas: JPEG se for opaco; WebP/PNG se tiver transparência (assim o fundo transparente é mantido). */
-export const jpg = (c, q = .82) => !hasAlpha(c) ? c.toDataURL('image/jpeg', q) : WEBP ? c.toDataURL('image/webp', q) : c.toDataURL('image/png');
+/* Codifica o canvas: JPEG se for opaco; WebP/PNG se tiver transparência. */
+export const jpg = (c, q = .82) => {
+  if (!hasAlpha(c)) return c.toDataURL('image/jpeg', q);
+  if (WEBP) {
+    const webp = c.toDataURL('image/webp', q);
+    if (webp.startsWith('data:image/webp')) return webp
+  }
+  return c.toDataURL('image/png')
+};
 export async function small(src) { try { return jpg(crop(await load(src), 256)) } catch { return src } }
 /* Reduz a imagem inteira (sem cortar) para caber no Firestore. Se não der (CORS), guarda o link original. */
 export function shrink(im, src, max = 512) {

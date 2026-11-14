@@ -14,7 +14,6 @@ async function start(u) {
     page(demo ? 'Ficha (demo, nada é salvo)' : 'Ficha', `<div class=row style="margin-bottom:10px"><a class="btn g" href="${demo ? 'index.html' : qs('c') ? 'campanha.html?id=' + qs('c') : 'fichas.html'}">← Voltar</a>${demo ? '' : '<button class=g data-a=obs>Copiar link do OBS</button><button class="g gear" data-a=obscfg title="Configurar portrait do OBS" aria-label="Configurar portrait do OBS">⚙</button><span id=sv class=mt></span>'}</div><div id=sh></div>`, u);
     if (demo) { M = mountSheet($('#sh'), S, {}); return }
 
-    trackSheet(u.uid, id);
     const ref = doc(db, 'sheets', id), server = {};   // server[k] = último valor conhecido no servidor (texto estável)
     let tm, first = true, dead = false;
     const sv = t => { const e = $('#sv'); if (e) e.textContent = t };
@@ -31,7 +30,12 @@ async function start(u) {
         if (!snap.exists()) { if (first) { dead = true; page('Ficha', '<p>Ficha não encontrada.</p>', u); first = false; ok() } return }
         if (snap.metadata.hasPendingWrites) return;          // eco das minhas próprias gravações
         const d = snap.data(); let changed = false;
-        if (first) { Object.assign(S, blank(), d); migrate(S); for (const k of Object.keys(d)) if (!SKIP.has(k)) server[k] = st(d[k]); first = false; ok(); return }
+        if (first) {
+            Object.assign(S, blank(), d); migrate(S);
+            if (d.owner === u.uid) trackSheet(u.uid, id);
+            for (const k of Object.keys(d)) if (!SKIP.has(k)) server[k] = st(d[k]);
+            first = false; ok(); return
+        }
         for (const k of Object.keys(d)) {
             if (SKIP.has(k)) continue; const r = st(d[k]); if (r === server[k]) continue;
             const dirty = server[k] !== undefined && st(S[k]) !== server[k];   // tenho edição local ainda não enviada?

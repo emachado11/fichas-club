@@ -7,9 +7,10 @@ export const clean = h => String(h || '').trim().replace(/^@/, '').toLowerCase()
 export const validHandle = h => /^[a-z0-9_.]{3,20}$/.test(h);
 export const isEmail = t => /^\S+@\S+\.\S+$/.test(String(t).trim());
 export const sha = async t => [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(String(t).trim().toLowerCase())))].map(b => b.toString(16).padStart(2, '0')).join('');
-export const THEMES = { dark: 'Escuro', light: 'Claro', black: 'Super escuro' };
-export const applyTheme = t => { t = THEMES[t] ? t : 'dark'; document.documentElement.dataset.theme = t; try { localStorage.theme = t } catch { } };
-export const applyLang = l => { document.documentElement.lang = l || 'pt-BR'; try { localStorage.lang = l || 'pt-BR' } catch { } };
+export const MODES = { light: 'Claro', dark: 'Escuro' };
+export const PALETTES = { executor: 'Executor', analista: 'Analista', vigilante: 'Vigilante' };
+export const applyTheme = t => { t = MODES[t] ? t : 'dark'; document.documentElement.dataset.theme = t; try { localStorage.theme = t } catch { } };
+export const applyPalette = p => { p = PALETTES[p] ? p : 'executor'; document.documentElement.dataset.palette = p; try { localStorage.palette = p } catch { } };
 
 /* Garante que o usuário tenha perfil (cria @ automático na primeira vez) e carrega as preferências privadas. */
 export async function ensureProfile(u) {
@@ -29,7 +30,7 @@ export async function ensureProfile(u) {
   }
   if (ME) cache[u.uid] = ME;
   try { const p = await getDoc(doc(db, 'users', u.uid)); PRIV = p.exists() ? p.data() : {} } catch { PRIV = {} }
-  if (PRIV.theme) applyTheme(PRIV.theme); if (PRIV.lang) applyLang(PRIV.lang);
+  if (PRIV.theme) applyTheme(PRIV.theme); if (PRIV.palette) applyPalette(PRIV.palette);
   return ME
 }
 export const setMe = p => { ME = { ...ME, ...p }; cache[ME.uid] = ME };
@@ -63,11 +64,45 @@ export function watchFriends(uid, cb) {
     cb(await Promise.all(ids.map(getProfile)))
   }, () => cb([]))
 }
-export async function addFriend(uid, other) {
+export function watchFriendRequests(uid, cb) {
+  let incoming = [], outgoing = [], active = true;
+  const load = async (q, key, profileKey) => {
+    const requests = await Promise.all(q.docs.map(async d => {
+      const request = { id: d.id, ...d.data() };
+      return { ...request, [profileKey]: await getProfile(request[key]) }
+    }));
+    if (!active) return;
+    if (key === 'from') outgoing = requests; else incoming = requests;
+    cb({ incoming, outgoing })
+  };
+  const fail = () => { if (active) cb({ incoming, outgoing }) };
+  const unIncoming = onSnapshot(query(collection(db, 'friendRequests'), where('to', '==', uid)), q => load(q, 'from', 'fromProfile'), fail);
+  const unOutgoing = onSnapshot(query(collection(db, 'friendRequests'), where('from', '==', uid)), q => load(q, 'to', 'toProfile'), fail);
+  return () => { active = false; unIncoming(); unOutgoing() }
+}
+export async function sendFriendRequest(uid, other) {
   if (!other || other === uid) throw new Error('Esse é você mesmo.');
   const ref = doc(db, 'friendships', fid(uid, other));
   if ((await getDoc(ref)).exists()) throw new Error('Vocês já são amigos.');
-  await setDoc(ref, { members: [uid, other], from: uid, created: serverTimestamp() })
+  const outgoing = doc(db, 'friendRequests', `${uid}_${other}`);
+  if ((await getDoc(outgoing)).exists()) throw new Error('A solicitação já foi enviada.');
+  if ((await getDoc(doc(db, 'friendRequests', `${other}_${uid}`))).exists()) {
+    throw new Error('Essa pessoa já enviou uma solicitação. Aceite-a em Perfil › Amigos.')
+  }
+  await setDoc(outgoing, { from: uid, to: other, created: serverTimestamp() })
+}
+export async function answerFriendRequest(request, uid, accept) {
+  if (accept ? request.to !== uid : request.to !== uid && request.from !== uid) {
+    throw new Error('Você não pode responder a essa solicitação.')
+  }
+  const requestRef = doc(db, 'friendRequests', request.id);
+  if (!accept) return deleteDoc(requestRef);
+  const batch = writeBatch(db);
+  batch.set(doc(db, 'friendships', fid(uid, request.from)), {
+    members: [uid, request.from], from: uid, created: serverTimestamp()
+  });
+  batch.delete(requestRef);
+  await batch.commit()
 }
 export const removeFriend = (uid, other) => deleteDoc(doc(db, 'friendships', fid(uid, other)));
 
