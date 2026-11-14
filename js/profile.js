@@ -30,7 +30,18 @@ export async function ensureProfile(u) {
   }
   if (ME) cache[u.uid] = ME;
   try { const p = await getDoc(doc(db, 'users', u.uid)); PRIV = p.exists() ? p.data() : {} } catch { PRIV = {} }
-  if (PRIV.theme) applyTheme(PRIV.theme); if (PRIV.palette) applyPalette(PRIV.palette);
+  const localPrefs = {};
+  try { localPrefs.theme = localStorage.theme; localPrefs.palette = localStorage.palette } catch { }
+  const syncPrefs = {};
+  if (MODES[localPrefs.theme]) {
+    applyTheme(localPrefs.theme);
+    if (PRIV.theme !== localPrefs.theme) syncPrefs.theme = localPrefs.theme
+  } else if (PRIV.theme) applyTheme(PRIV.theme);
+  if (PALETTES[localPrefs.palette]) {
+    applyPalette(localPrefs.palette);
+    if (PRIV.palette !== localPrefs.palette) syncPrefs.palette = localPrefs.palette
+  } else if (PRIV.palette) applyPalette(PRIV.palette);
+  if (Object.keys(syncPrefs).length) savePriv(u.uid, syncPrefs).catch(() => { });
   return ME
 }
 export const setMe = p => { ME = { ...ME, ...p }; cache[ME.uid] = ME };
@@ -72,7 +83,7 @@ export function watchFriendRequests(uid, cb) {
       return { ...request, [profileKey]: await getProfile(request[key]) }
     }));
     if (!active) return;
-    if (key === 'from') outgoing = requests; else incoming = requests;
+    if (key === 'from') incoming = requests; else outgoing = requests;
     cb({ incoming, outgoing })
   };
   const fail = () => { if (active) cb({ incoming, outgoing }) };

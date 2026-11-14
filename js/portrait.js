@@ -78,7 +78,7 @@ const BAR = ['Barra', [S('mode', 'Exibir', [['both', 'Barra + texto'], ['bar', '
 export const SCHEMA = {
     bg: [POS, ['Painel', [C('color', 'Cor'), R('alpha', 'Opacidade da cor', 0, 1, .01), N('radius', 'Arredondamento', 0, 400), N('bw', 'Borda (px)', 0, 40), C('bc', 'Cor da borda')]], ...FX],
     portrait: [POS, ['Foto', [S('shape', 'Formato', [['circle', 'Círculo'], ['rounded', 'Arredondado'], ['square', 'Quadrado']]), N('radius', 'Arredondamento (px)', 0, 400), N('bw', 'Borda (px)', 0, 40), C('bc', 'Cor da borda'), B('bgOn', 'Fundo atrás da foto'), C('bgc', 'Cor do fundo'), B('clip', 'Recortar no formato')]], ...FX],
-    name: [POS, ['Nome', [N('maxc', 'Limite de caracteres', 1, 64), B('ell', 'Colocar … ao cortar')]], NAME_TEXT],
+    name: [POS, ['Nome', [N('maxc', 'Limite de caracteres', 1, 64), B('ell', 'Colocar … ao cortar')]], NAME_TEXT, ...FX],
     pv: [POS, BAR, TXT, ...FX], pd: [POS, BAR, TXT, ...FX]
 };
 export const getPath = (o, p) => p.split('.').reduce((a, k) => a?.[k], o);
@@ -91,7 +91,7 @@ const CSS = `.pg{position:relative;pointer-events:none}.pg *{box-sizing:border-b
 .pe .scan{position:absolute;inset:0;pointer-events:none}
 .pe .trk{position:absolute;inset:0}.pe .fl{position:absolute}
 .pe .tx{position:absolute;inset:0;display:flex;align-items:center;padding:0 .4em;white-space:nowrap;overflow:hidden}
-.pe .tx.nm{padding:0}
+.pe .tx.portrait-name{padding:0}
 @keyframes pg-glitch{0%,78%,100%{transform:none;clip-path:none}80%{transform:translate(calc(var(--gi)*-1),0);clip-path:inset(10% 0 55% 0)}82%{transform:translate(var(--gi),0);clip-path:inset(60% 0 8% 0)}84%{transform:translate(calc(var(--gi)*-.5),calc(var(--gi)*.3));clip-path:inset(30% 0 40% 0)}86%{transform:translate(calc(var(--gi)*.8),0);clip-path:inset(0 0 70% 0)}88%{transform:translate(calc(var(--gi)*-.7),0);clip-path:inset(45% 0 20% 0)}90%{transform:none;clip-path:none}}
 @keyframes pg-flicker{0%,100%{opacity:1}91%{opacity:1}92%{opacity:calc(1 - var(--fi))}93%{opacity:1}95%{opacity:calc(1 - var(--fi)*.6)}96%{opacity:1}}
 @keyframes pg-pulse{0%,100%{filter:var(--f0)}50%{filter:var(--f1)}}
@@ -125,13 +125,13 @@ export function createPortrait(root, opt = {}) {
         root.className = 'pg'; root.style.width = L.w + 'px'; root.style.height = L.h + 'px'; root.innerHTML = ''; N = {};
         Object.entries(L.el).filter(([, e]) => e.on).sort((a, b) => a[1].z - b[1].z).forEach(([id, e]) => {
             const w = document.createElement('div'); w.className = 'pe'; w.dataset.id = id; place(w, e);
-            const x = document.createElement('div'); x.className = 'fxw'; effects(x, id == 'name' ? fx() : e.fx); w.append(x);
+            const x = document.createElement('div'); x.className = 'fxw'; effects(x, e.fx); w.append(x);
             const c = document.createElement('div'); c.className = 'pc'; x.append(c); const n = { w, c };
             if (id == 'bg') { c.style.background = rgba(e.color, e.alpha); c.style.borderRadius = e.radius + 'px'; c.style.border = `${e.bw}px solid ${e.bc}` }
             else if (id == 'portrait') {
                 c.style.borderRadius = e.shape == 'circle' ? '50%' : e.shape == 'rounded' ? e.radius + 'px' : '0'; c.style.border = `${e.bw}px solid ${e.bc}`; c.style.background = e.bgOn ? e.bgc : 'transparent'; if (!e.clip) c.style.overflow = 'visible';
                 n.img = document.createElement('img'); n.img.alt = ''; n.img.hidden = true; c.append(n.img)
-            } else if (id == 'name') { n.tx = document.createElement('div'); n.tx.className = 'tx nm'; font(n.tx, e, false); c.append(n.tx) }
+            } else if (id == 'name') { n.tx = document.createElement('div'); n.tx.className = 'tx portrait-name'; font(n.tx, e, false); c.append(n.tx) }
             else {
                 const hasBar = e.mode != 'text'; c.style.position = 'absolute';
                 if (hasBar) {
@@ -142,7 +142,7 @@ export function createPortrait(root, opt = {}) {
                 }
                 if (e.mode != 'bar') { n.tx = document.createElement('div'); n.tx.className = 'tx'; font(n.tx, e); c.append(n.tx) }
             }
-            if (id !== 'name' && e.fx.scan.on) { const sc = document.createElement('div'); sc.className = 'scan'; sc.style.background = `repeating-linear-gradient(0deg,rgba(0,0,0,${e.fx.scan.op}) 0 1px,transparent 1px ${e.fx.scan.gap}px)`; c.append(sc) }
+            if (e.fx.scan.on) { const sc = document.createElement('div'); sc.className = 'scan'; sc.style.background = `repeating-linear-gradient(0deg,rgba(0,0,0,${e.fx.scan.op}) 0 1px,transparent 1px ${e.fx.scan.gap}px)`; c.append(sc) }
             N[id] = n; root.append(w)
         });
         D && patch(null)
@@ -159,7 +159,7 @@ export function createPortrait(root, opt = {}) {
                 s.cssText = 'position:absolute;background:' + g + ';' + (v ? `left:0;right:0;${c.dir == 'btt' ? 'bottom' : 'top'}:0;height:${p}%` : `top:0;bottom:0;${c.dir == 'ltr' ? 'left' : 'right'}:0;width:${p}%`)
             }
         });
-        const shake = (cls, k) => ['portrait', 'pv', 'pd', 'bg'].forEach(id => { const n = N[id]; if (n && e[id].fx[k].on) { n.w.classList.remove('hit', 'hitpd'); void n.w.offsetWidth; n.w.classList.add(cls); clearTimeout(hitT[id]); hitT[id] = setTimeout(() => n.w.classList.remove(cls), 700) } });
+        const shake = (cls, k) => ['portrait', 'pv', 'pd', 'name', 'bg'].forEach(id => { const n = N[id]; if (n && e[id].fx[k].on) { n.w.classList.remove('hit', 'hitpd'); void n.w.offsetWidth; n.w.classList.add(cls); clearTimeout(hitT[id]); hitT[id] = setTimeout(() => n.w.classList.remove(cls), 700) } });
         if (prev && (+D.pv < +prev.pv)) shake('hit', 'hit');
         if (prev && (+D.pd < +prev.pd)) shake('hitpd', 'hitpd')
     }

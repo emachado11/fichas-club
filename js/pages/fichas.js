@@ -6,11 +6,10 @@ import { fab, sheetCard } from '../ui.js';
 const SORTS = { az: 'Ordem alfabética', lvl: 'Nível', perfil: 'Perfil', recent: 'Mais recentes', mine: 'Minha ordem' };
 const PF = ['Todos', 'Executor', 'Analista', 'Vigilante'];
 guard(u => {
-    let all = [], st = { sort: PRIV.fsort || 'az', dir: PRIV.fdir || 1, perfil: 'Todos', mundo: '', q: '' }, order = PRIV.sheetOrder || [], drag = null;
+    let all = [], st = { sort: PRIV.fsort || 'az', dir: PRIV.fdir || 1, perfil: 'Todos', q: '' }, order = PRIV.sheetOrder || [], drag = null;
     page('Minhas fichas', `<div class=tb><input type=search id=q placeholder="Buscar ficha…" aria-label="Buscar ficha">
    <select id=so aria-label="Ordenar por">${Object.entries(SORTS).map(([k, v]) => `<option value=${k} ${k == st.sort ? 'selected' : ''}>${v}</option>`).join('')}</select>
-   <button class=g id=dr data-a=dir title="Inverter ordem"></button>
-   <select id=mu aria-label="Mundo"><option value="">Todos os mundos</option><option value=moderno>Moderno</option><option value=medieval>Medieval</option></select></div>
+   <button class=g id=dr data-a=dir title="Inverter ordem"></button></div>
    <div class="chips tb" id=ch>${PF.map(p => `<button data-a=pf data-v=${p} class="${p == 'Todos' ? 'on' : ''}">${p}</button>`).join('')}</div><div id=gr class=grid></div>${fab([{ href: 'ficha-nova.html', label: 'Nova ficha' }])}`, u);
     const cmp = {
         az: (a, b) => a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' }), lvl: (a, b) => a.nivel - b.nivel || cmp.az(a, b),
@@ -18,7 +17,7 @@ guard(u => {
     };
     const full = () => { const m = new Map(all.map(x => [x.id, x])), ids = order.filter(i => m.has(i)); all.forEach(x => { if (!ids.includes(x.id)) ids.push(x.id) }); return ids };
     function view() {
-        let L = all.filter(x => (st.perfil == 'Todos' || x.perfil == st.perfil) && (!st.mundo || (x.mundo || 'moderno') == st.mundo) && (!st.q || (x.name + ' ' + x.ocup).toLowerCase().includes(st.q)));
+        let L = all.filter(x => (st.perfil == 'Todos' || x.perfil == st.perfil) && (!st.q || (x.name + ' ' + x.ocup).toLowerCase().includes(st.q)));
         if (st.sort == 'mine') { const ids = full(); L.sort((a, b) => ids.indexOf(a.id) - ids.indexOf(b.id)) } else { L.sort((a, b) => cmp[st.sort](a, b) * (st.sort == 'recent' ? -st.dir : st.dir)) }
         return L
     }
@@ -33,7 +32,6 @@ guard(u => {
     onSnapshot(query(collection(db, 'sheets'), where('owner', '==', u.uid)), q => { all = q.docs.map(d => ({ id: d.id, ...d.data() })); draw() }, x => $('#gr').textContent = err(x));
     $('#q').oninput = e => { st.q = e.target.value.trim().toLowerCase(); draw() };
     $('#so').onchange = e => { st.sort = e.target.value; st.dir = st.sort == 'lvl' ? -1 : 1; save(); draw() };
-    $('#mu').onchange = e => { st.mundo = e.target.value; draw() };
     const g = $('#gr');
     g.addEventListener('dragstart', e => { const c = e.target.closest('.sc'); if (!c) return; drag = c.dataset.id; c.classList.add('dgd'); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', drag) });
     g.addEventListener('dragover', e => { if (!drag) return; e.preventDefault(); g.querySelectorAll('.ov').forEach(x => x.classList.remove('ov')); e.target.closest('.sc')?.classList.add('ov') });

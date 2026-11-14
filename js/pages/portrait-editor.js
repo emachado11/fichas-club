@@ -37,6 +37,7 @@ async function boot(u) {
     const open = new Set();
     $('#app').innerHTML = `<div class=pe-top>
   <a class="btn g" href="${back}">← Voltar</a><b class=pe-title>${esc(title)}</b>
+      <div class=pe-mode role=tablist aria-label="Modo de visualização"><button class=on id=mode-edit role=tab aria-selected=true data-a=mode data-v=edit>Editar</button><button id=mode-preview role=tab aria-selected=false data-a=mode data-v=preview>Prévia</button></div>
   <label class=pe-f>Tela <select id=preset><option value="">Personalizada</option><option value=2k>2K · 2560×1440</option><option value=fhd>Full HD · 1920×1080</option></select> <input type=number id=cw min=50 max=4000 value=${L.w}> × <input type=number id=ch min=50 max=4000 value=${L.h}></label>
   <label class=pe-f>Fundo <select id=bgm><option value=chk>Transparente (xadrez)</option><option value=dark>Escuro</option><option value=light>Claro</option><option value=green>Verde</option></select></label>
   <label class=pe-f>Zoom <select id=zoom><option value=auto>Auto</option>${[50, 75, 100, 150, 200, 300].map(z => `<option value=${z}>${z}%</option>`).join('')}</select></label>
@@ -82,12 +83,32 @@ async function boot(u) {
         }).join('')
     }
     function fit() {
-        const w = $('#wrap'), z = $('#zoom').value; sc = z == 'auto' ? Math.max(.2, Math.min(3, (w.clientWidth - 48) / L.w, (w.clientHeight - 48) / L.h)) : +z / 100;
-        const st = $('#stage'); st.style.width = L.w + 'px'; st.style.height = L.h + 'px'; st.style.transform = `scale(${sc})`; st.style.setProperty('--inv', 1 / sc);
-        const s = $('#sz'); s.style.width = L.w * sc + 'px'; s.style.height = L.h * sc + 'px'
+        const w = $('#wrap'), preview = document.body.classList.contains('pe-preview'), z = preview ? 'auto' : $('#zoom').value, layout = pg.layout;
+        sc = z == 'auto' ? Math.max(preview ? .05 : .2, Math.min(3, (w.clientWidth - 48) / layout.w, (w.clientHeight - 48) / layout.h)) : +z / 100;
+        const st = $('#stage'); st.style.width = layout.w + 'px'; st.style.height = layout.h + 'px'; st.style.transform = `scale(${sc})`; st.style.setProperty('--inv', 1 / sc);
+        const s = $('#sz'); s.style.width = layout.w * sc + 'px'; s.style.height = layout.h * sc + 'px'
     }
     const sn = v => $('#snap').checked ? Math.round(v / +$('#gs').value) * +$('#gs').value : Math.round(v);
-    const rebuild = () => { pg.setLayout(L); drawOv() };
+    const previewLayout = () => {
+        const layout = clone(L), name = layout.el.name;
+        const effects = name.fx;
+        const margin = Math.ceil(Math.max(24, name.size / 2,
+            effects.shadow.on ? Math.max(Math.abs(effects.shadow.x), Math.abs(effects.shadow.y)) + effects.shadow.blur * 2 : 0,
+            effects.glow.on ? effects.glow.blur * effects.glow.str * 2 : 0,
+            effects.chroma.on ? effects.chroma.off + 4 : 0,
+            effects.glitch.on ? effects.glitch.int + 4 : 0));
+        Object.entries(layout.el).forEach(([id, element]) => { element.on = id === 'name' });
+        name.x = margin; name.y = margin; layout.w = name.w + margin * 2; layout.h = name.h + margin * 2;
+        return layout
+    };
+    function setMode(mode) {
+        const preview = mode === 'preview';
+        document.body.classList.toggle('pe-preview', preview);
+        $('#mode-edit').classList.toggle('on', !preview); $('#mode-edit').setAttribute('aria-selected', String(!preview));
+        $('#mode-preview').classList.toggle('on', preview); $('#mode-preview').setAttribute('aria-selected', String(preview));
+        pg.setLayout(preview ? previewLayout() : L); drawOv(); fit()
+    }
+    const rebuild = () => { pg.setLayout(document.body.classList.contains('pe-preview') ? previewLayout() : L); drawOv() };
     function commit() { const c = JSON.stringify(L); if (c !== last) { hist.push(last); if (hist.length > 100) hist.shift(); last = c; dirty = true; $('#ss').textContent = 'Alterações não salvas' } }
     function syncPos() { ['x', 'y', 'w', 'h', 'rot'].forEach(k => { const i = $(`#insp [data-p="${k}"]`); if (i) i.value = L.el[sel][k] }) }
 
@@ -111,6 +132,7 @@ async function boot(u) {
     });
     addEventListener('pointerup', () => { if (dr) { dr = null; commit() } });
     addEventListener('keydown', e => {
+        if (e.key === 'Escape' && document.body.classList.contains('pe-preview')) { setMode('edit'); return }
         const tg = e.target; const typing = tg.matches?.('input:not([type=checkbox]):not([type=range]),textarea,select');
         if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() == 's') { e.preventDefault(); A.save(); return }
         if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() == 'z' && !typing) { e.preventDefault(); A.undo(); return }
@@ -157,6 +179,7 @@ async function boot(u) {
     $('#zoom').onchange = fit; addEventListener('resize', fit);
     const setL = x => { L = mergeLayout(x); syncPreset(); $('#cw').value = L.w; $('#ch').value = L.h; if (!L.el[sel]) sel = 'portrait'; rebuild(); fit(); drawEls(); drawInsp() };
     const A = {
+        mode: t => setMode(t.dataset.v),
         pick: t => { if (t.dataset.id == sel) return; sel = t.dataset.id; drawEls(); drawInsp(); drawOv() },
         dmg: () => { pd.pv = Math.max(0, pd.pv - 1); drawPrev(); push() },
         undo: () => { const p = hist.pop(); if (!p) return toast('Nada para desfazer'); last = p; dirty = true; setL(JSON.parse(p)) },
@@ -176,5 +199,5 @@ async function boot(u) {
     act(A);
     addEventListener('beforeunload', e => { if (dirty) { e.preventDefault(); e.returnValue = '' } });
     drawEls(); drawInsp(); drawPrev(); drawOv(); fit(); push(); syncPreset();
-    if (document.fonts?.ready) document.fonts.ready.then(() => { pg.setLayout(L); push() });
+    if (document.fonts?.ready) document.fonts.ready.then(() => { rebuild(); fit(); push() });
 }

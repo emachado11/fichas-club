@@ -330,3 +330,83 @@ body.pe-body #app {
 .pe-top .btn {
   padding: .3em .7em
 }
+
+.pe-mode {
+  display: flex;
+  gap: 4px;
+  padding: 2px;
+  border: 1px solid var(--ln);
+  border-radius: 6px;
+  background: var(--gb)
+}
+
+.pe-mode button {
+  padding: .25em .6em;
+  background: transparent;
+  color: var(--mt)
+}
+
+.pe-mode button.on {
+  background: var(--ac);
+  color: var(--tx)
+}
+
+body.pe-body.pe-preview {
+  height: 100vh;
+  overflow: hidden;
+  background: transparent
+}
+
+body.pe-preview::before,
+body.pe-preview::after {
+  display: none
+}
+
+body.pe-body.pe-preview #app {
+  height: 100vh
+}
+
+body.pe-preview .pe-top {
+  padding: 0;
+  border: 0;
+  background: transparent
+}
+
+body.pe-preview .pe-top>:not(.pe-mode),
+body.pe-preview .pe-warn,
+body.pe-preview .pe-l,
+body.pe-preview .pe-r,
+body.pe-preview #ov,
+body.pe-preview #toast,
+body.pe-preview #modal {
+  display: none !important
+}
+
+body.pe-preview .pe-mode {
+  position: fixed;
+  z-index: 20;
+  top: max(8px, env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--pop);
+  backdrop-filter: blur(8px)
+}
+
+body.pe-preview .pe-main {
+  position: fixed;
+  inset: 0;
+  display: block
+}
+
+body.pe-preview .pe-c {
+  width: 100vw;
+  height: 100vh;
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+  background: transparent
+}
+
+body.pe-preview .pe-stage {
+  outline: none
+}

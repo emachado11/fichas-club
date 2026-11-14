@@ -35,7 +35,7 @@ html[data-palette=conhecimento] { --ac: #d6ac57; --ac2: color-mix(in srgb, #d6ac
 html[data-palette=morte] { --ac: #696969; --ac2: color-mix(in srgb, #696969 75%, white) }
 html[data-palette=sangue] { --ac: #780006; --ac2: color-mix(in srgb, #780006 75%, white) }
 html[data-palette=energia] { --ac: #d26dee; --ac2: color-mix(in srgb, #d26dee 75%, white) }
-html[data-palette=medo] { --ac: #abc8d1; --ac2: color-mix(in srgb, #abc8d1 75%, white) }
+html[data-palette=medo] { --ac: #93bdcc; --ac2: color-mix(in srgb, #93bdcc 75%, white) }
 
 html[data-theme=light] body::before {
   display: none
@@ -254,6 +254,31 @@ html[data-theme=light] .ib {
 .menu p {
   margin: 6px 2px;
   font-size: 15px
+}
+
+.ctx-menu {
+  position: fixed;
+  z-index: 100;
+  width: max-content;
+  min-width: 190px;
+  max-width: calc(100vw - 16px);
+  padding: 4px;
+  background: var(--pn);
+  border: 1px solid var(--ln);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px #0008
+}
+
+.ctx-menu button {
+  width: 100%;
+  text-align: left;
+  white-space: normal;
+  background: transparent;
+  color: var(--tx)
+}
+
+.ctx-menu button:hover {
+  background: var(--gb2)
 }
 
 .mi {
@@ -930,6 +955,11 @@ html[data-theme=light] .ib {
   min-width: 0
 }
 
+.mem>.row {
+  flex: 1 1 300px;
+  justify-content: space-between
+}
+
 .sec2 {
   margin-top: 14px
 }
@@ -1029,7 +1059,7 @@ html[data-theme=light] .ib {
 .th[data-v=morte] i { background: linear-gradient(90deg, #696969, color-mix(in srgb, #696969 75%, white)) }
 .th[data-v=sangue] i { background: linear-gradient(90deg, #780006, color-mix(in srgb, #780006 75%, white)) }
 .th[data-v=energia] i { background: linear-gradient(90deg, #d26dee, color-mix(in srgb, #d26dee 75%, white)) }
-.th[data-v=medo] i { background: linear-gradient(90deg, #abc8d1, color-mix(in srgb, #abc8d1 75%, white)) }
+.th[data-v=medo] i { background: linear-gradient(90deg, #93bdcc, color-mix(in srgb, #93bdcc 75%, white)) }
 
 .th.on {
   border-color: var(--ac2)
@@ -1242,6 +1272,20 @@ input[type=search] {
 
   .themes {
     gap: 6px
+  }
+
+  .ptabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    border-bottom: 0
+  }
+
+  .ptabs button {
+    min-width: 0;
+    border: 1px solid var(--ln);
+    border-radius: 6px;
+    padding: .6em .5em
   }
 
   .th {
