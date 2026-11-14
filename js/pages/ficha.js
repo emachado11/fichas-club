@@ -2,6 +2,7 @@ import { guard, page, act, qs, $, clip, toast, blank, migrate, err, esc, modal }
 import { db, doc, getDoc, onSnapshot, updateDoc, serverTimestamp } from '../firebase.js';
 import { mountSheet } from '../sheet.js';
 import { clone } from '../portrait.js';
+import { trackSheet } from '../profile.js';
 const id = qs('id'), demo = qs('demo');
 const SKIP = new Set(['updated', 'owner']);
 /* texto estável (ordena as chaves) para comparar valores */
@@ -13,6 +14,7 @@ async function start(u) {
     page(demo ? 'Ficha (demo, nada é salvo)' : 'Ficha', `<div class=row style="margin-bottom:10px"><a class="btn g" href="${demo ? 'index.html' : qs('c') ? 'campanha.html?id=' + qs('c') : 'fichas.html'}">← Voltar</a>${demo ? '' : '<button class=g data-a=obs>Copiar link do OBS</button><button class="g gear" data-a=obscfg title="Configurar portrait do OBS" aria-label="Configurar portrait do OBS">⚙</button><span id=sv class=mt></span>'}</div><div id=sh></div>`, u);
     if (demo) { M = mountSheet($('#sh'), S, {}); return }
 
+    trackSheet(u.uid, id);
     const ref = doc(db, 'sheets', id), server = {};   // server[k] = último valor conhecido no servidor (texto estável)
     let tm, first = true, dead = false;
     const sv = t => { const e = $('#sv'); if (e) e.textContent = t };

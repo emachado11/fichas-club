@@ -18,7 +18,8 @@ const fx = () => ({
     shadow: { on: false, color: '#000000', x: 0, y: 3, blur: 6 },
     scan: { on: false, op: .25, gap: 3 },
     flicker: { on: false, int: .4, speed: 4 },
-    hit: { on: false }
+    hit: { on: false },
+    hitpd: { on: false }
 });
 const txt = (o = {}) => ({ font: 'Cinzel', size: 22, weight: 700, color: '#ffffff', align: 'left', ls: 1, upper: false, sw: 0, sc: '#000000', ...o });
 const base = (label, x, y, w, h, z, o = {}) => ({ label, on: true, x, y, w, h, rot: 0, opacity: 1, z, ...o, fx: fx() });
@@ -26,16 +27,32 @@ const bar = (label, y, fill, fmt, z = 4) => base(label, 172, y, 334, 34, z, {
     ...txt({ size: 17, align: 'center', ls: .5 }), mode: 'both', dir: 'ltr', seg: 0, gap: 3, fmt, fill, fill2: '', track: '#000000', talpha: .55, radius: 8, bw: 2, bc: '#000000',
     low: true, lowPct: 30, lowColor: '#ff2a2a'
 });
-export const DEFAULT = () => ({
+/* Escala um layout por k (posição, tamanho, fontes, bordas, efeitos) e centraliza na tela W×H. Usado no padrão e em "Converter para 2K". */
+export function upscale(src, k, W, H) {
+    const l = JSON.parse(JSON.stringify(src)), ox = Math.round((W - l.w * k) / 2), oy = Math.round((H - l.h * k) / 2);
+    for (const e of Object.values(l.el)) {
+        ['x', 'y'].forEach(a => e[a] = Math.round(e[a] * k) + (a == 'x' ? ox : oy));
+        ['w', 'h', 'size', 'sw', 'radius', 'bw', 'gap'].forEach(a => { if (typeof e[a] == 'number') e[a] = +(e[a] * k).toFixed(1) });
+        if (typeof e.ls == 'number') e.ls = +(e.ls * k).toFixed(1);
+        const f = e.fx; if (!f) continue;
+        f.glow.blur = Math.round(f.glow.blur * k); f.chroma.off *= k; f.glitch.int = Math.round(f.glitch.int * k);
+        f.shadow.x *= k; f.shadow.y *= k; f.shadow.blur *= k; f.scan.gap = Math.round(f.scan.gap * k)
+    }
+    l.w = W; l.h = H; return l
+}
+export const SCREEN = { w: 2560, h: 1440 };      // tela "2K" padrão: sobra espaço em volta para os efeitos não serem cortados
+export const PORTRAIT = { w: 1040, h: 340 };     // tamanho do portrait dentro da tela
+const SMALL = () => ({
     v: 1, w: 520, h: 170,
     el: {
         bg: base('Painel de fundo', 0, 0, 520, 170, 1, { color: '#0b0b10', alpha: .6, radius: 18, bw: 2, bc: '#b4472b' }),
-        portrait: base('Foto', 14, 14, 142, 142, 3, { shape: 'circle', radius: 16, bw: 4, bc: '#ffffff', bgc: '#111111' }),
+        portrait: base('Foto', 14, 14, 142, 142, 3, { shape: 'circle', radius: 16, bw: 4, bc: '#ffffff', bgOn: false, bgc: '#111111', clip: true }),
         name: base('Nome', 172, 16, 334, 36, 4, { ...txt({ size: 26 }), maxc: 20, ell: true }),
         pv: bar('Pontos de Vida', 62, '#c0392b', 'PV {cur}/{max}'),
         pd: bar('Pontos de Determinação', 108, '#2e86c1', 'PD {cur}')
     }
 });
+export const DEFAULT = () => ({ ...upscale(SMALL(), PORTRAIT.w / 520, SCREEN.w, SCREEN.h), v: 2 });
 const isO = v => v && typeof v === 'object' && !Array.isArray(v);
 const merge = (b, o) => { const r = { ...b }; if (!isO(o)) return r; for (const k in o) r[k] = isO(b[k]) && isO(o[k]) ? merge(b[k], o[k]) : o[k] === undefined ? b[k] : o[k]; return r };
 export const mergeLayout = l => merge(DEFAULT(), l || {});
@@ -53,12 +70,13 @@ const FX = [
     ['Efeito: sombra', [B('fx.shadow.on', 'Ativar'), C('fx.shadow.color', 'Cor'), N('fx.shadow.x', 'X', -50, 50), N('fx.shadow.y', 'Y', -50, 50), N('fx.shadow.blur', 'Desfoque', 0, 80)]],
     ['Efeito: linhas de varredura', [B('fx.scan.on', 'Ativar'), R('fx.scan.op', 'Opacidade', 0, 1, .01), N('fx.scan.gap', 'Espaçamento (px)', 2, 20)]],
     ['Efeito: cintilar', [B('fx.flicker.on', 'Ativar'), R('fx.flicker.int', 'Intensidade', 0, 1, .01), N('fx.flicker.speed', 'Ciclo (s)', .5, 12, .1)]],
-    ['Efeito: tremer ao perder PV', [B('fx.hit.on', 'Ativar')]]
+    ['Efeito: tremer ao perder PV', [B('fx.hit.on', 'Ativar')]],
+    ['Efeito: tremer ao perder PD', [B('fx.hitpd.on', 'Ativar')]]
 ];
 const BAR = ['Barra', [S('mode', 'Exibir', [['both', 'Barra + texto'], ['bar', 'Só barra'], ['text', 'Só texto']]), T('fmt', 'Texto ({cur} {max} {pct})'), S('dir', 'Direção', [['ltr', 'Esquerda → direita'], ['rtl', 'Direita → esquerda'], ['btt', 'Baixo → cima'], ['ttb', 'Cima → baixo']]), C('fill', 'Cor do preenchimento'), T('fill2', 'Cor final do degradê (opcional, ex. #ff0)'), C('track', 'Cor do fundo'), R('talpha', 'Opacidade do fundo', 0, 1, .01), N('radius', 'Arredondamento', 0, 200), N('bw', 'Borda (px)', 0, 30), C('bc', 'Cor da borda'), N('seg', 'Segmentos (0 = contínua)', 0, 60), N('gap', 'Espaço entre segmentos', 0, 20), B('low', 'Mudar cor com pouca vida'), N('lowPct', 'Abaixo de (%)', 1, 100), C('lowColor', 'Cor de alerta')]];
 export const SCHEMA = {
     bg: [POS, ['Painel', [C('color', 'Cor'), R('alpha', 'Opacidade da cor', 0, 1, .01), N('radius', 'Arredondamento', 0, 400), N('bw', 'Borda (px)', 0, 40), C('bc', 'Cor da borda')]], ...FX],
-    portrait: [POS, ['Foto', [S('shape', 'Formato', [['circle', 'Círculo'], ['rounded', 'Arredondado'], ['square', 'Quadrado']]), N('radius', 'Arredondamento (px)', 0, 400), N('bw', 'Borda (px)', 0, 40), C('bc', 'Cor da borda'), C('bgc', 'Cor de fundo')]], ...FX],
+    portrait: [POS, ['Foto', [S('shape', 'Formato', [['circle', 'Círculo'], ['rounded', 'Arredondado'], ['square', 'Quadrado']]), N('radius', 'Arredondamento (px)', 0, 400), N('bw', 'Borda (px)', 0, 40), C('bc', 'Cor da borda'), B('bgOn', 'Fundo atrás da foto'), C('bgc', 'Cor do fundo'), B('clip', 'Recortar no formato')]], ...FX],
     name: [POS, ['Nome', [N('maxc', 'Limite de caracteres', 1, 64), B('ell', 'Colocar … ao cortar')]], TXT, ...FX],
     pv: [POS, BAR, TXT, ...FX], pd: [POS, BAR, TXT, ...FX]
 };
@@ -77,7 +95,8 @@ const CSS = `.pg{position:relative;pointer-events:none}.pg *{box-sizing:border-b
 @keyframes pg-flicker{0%,100%{opacity:1}91%{opacity:1}92%{opacity:calc(1 - var(--fi))}93%{opacity:1}95%{opacity:calc(1 - var(--fi)*.6)}96%{opacity:1}}
 @keyframes pg-pulse{0%,100%{filter:var(--f0)}50%{filter:var(--f1)}}
 @keyframes pg-hit{0%,100%{translate:0 0;filter:none}15%{translate:-7px 0;filter:drop-shadow(0 0 8px #f00) brightness(1.6)}35%{translate:6px 0}55%{translate:-4px 0;filter:drop-shadow(0 0 8px #f00) brightness(1.3)}75%{translate:3px 0}}
-.pe.hit{animation:pg-hit .6s steps(1,end) 1}`;
+@keyframes pg-hitpd{0%,100%{translate:0 0;filter:none}15%{translate:-6px 0;filter:drop-shadow(0 0 8px #2e86ff) brightness(1.5)}35%{translate:5px 0}55%{translate:-4px 0;filter:drop-shadow(0 0 8px #2e86ff) brightness(1.3)}75%{translate:3px 0}}
+.pe.hit{animation:pg-hit .6s steps(1,end) 1}.pe.hitpd{animation:pg-hitpd .6s steps(1,end) 1}`;
 function css() { if (document.getElementById('pg-css')) return; const s = document.createElement('style'); s.id = 'pg-css'; s.textContent = CSS; document.head.append(s) }
 
 const rgba = (h, a = 1) => { h = String(h || '#000').replace('#', ''); if (h.length == 3) h = [...h].map(c => c + c).join(''); const n = parseInt(h.slice(0, 6), 16) || 0; return `rgba(${n >> 16 & 255},${n >> 8 & 255},${n & 255},${a})` };
@@ -109,7 +128,7 @@ export function createPortrait(root, opt = {}) {
             const c = document.createElement('div'); c.className = 'pc'; x.append(c); const n = { w, c };
             if (id == 'bg') { c.style.background = rgba(e.color, e.alpha); c.style.borderRadius = e.radius + 'px'; c.style.border = `${e.bw}px solid ${e.bc}` }
             else if (id == 'portrait') {
-                c.style.borderRadius = e.shape == 'circle' ? '50%' : e.shape == 'rounded' ? e.radius + 'px' : '0'; c.style.border = `${e.bw}px solid ${e.bc}`; c.style.background = e.bgc;
+                c.style.borderRadius = e.shape == 'circle' ? '50%' : e.shape == 'rounded' ? e.radius + 'px' : '0'; c.style.border = `${e.bw}px solid ${e.bc}`; c.style.background = e.bgOn ? e.bgc : 'transparent'; if (!e.clip) c.style.overflow = 'visible';
                 n.img = document.createElement('img'); n.img.alt = ''; n.img.hidden = true; c.append(n.img)
             } else if (id == 'name') { n.tx = document.createElement('div'); n.tx.className = 'tx nm'; font(n.tx, e); c.append(n.tx) }
             else {
@@ -139,14 +158,16 @@ export function createPortrait(root, opt = {}) {
                 s.cssText = 'position:absolute;background:' + g + ';' + (v ? `left:0;right:0;${c.dir == 'btt' ? 'bottom' : 'top'}:0;height:${p}%` : `top:0;bottom:0;${c.dir == 'ltr' ? 'left' : 'right'}:0;width:${p}%`)
             }
         });
-        if (prev && (+D.pv < +prev.pv)) ['portrait', 'pv', 'name', 'bg'].forEach(id => { const n = N[id]; if (n && e[id].fx.hit.on) { n.w.classList.remove('hit'); void n.w.offsetWidth; n.w.classList.add('hit'); clearTimeout(hitT[id]); hitT[id] = setTimeout(() => n.w.classList.remove('hit'), 700) } })
+        const shake = (cls, k) => ['portrait', 'pv', 'pd', 'name', 'bg'].forEach(id => { const n = N[id]; if (n && e[id].fx[k].on) { n.w.classList.remove('hit', 'hitpd'); void n.w.offsetWidth; n.w.classList.add(cls); clearTimeout(hitT[id]); hitT[id] = setTimeout(() => n.w.classList.remove(cls), 700) } });
+        if (prev && (+D.pv < +prev.pv)) shake('hit', 'hit');
+        if (prev && (+D.pd < +prev.pd)) shake('hitpd', 'hitpd')
     }
     return {
         get layout() { return L },
         setLayout(l) { L = mergeLayout(l); build() },
         setData(d) { const p = D; D = d; patch(p) },
         /* só reposiciona um elemento (usado ao arrastar, sem recriar o DOM) */
-        move(id) { const n = N[id]; if (n) place(n.w, L.el[id]) }
+        move(id, el) { const n = N[id]; if (n) place(n.w, el || L.el[id]) }
     }
 }
 

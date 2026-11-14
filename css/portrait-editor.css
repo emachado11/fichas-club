@@ -15,8 +15,8 @@ body.pe-body #app { height: 100vh; display: flex; flex-direction: column }
 .pe-l h4:first-child { margin-top: 0 }
 .pe-r h3 { font-size: 16px; margin-bottom: 8px }
 .eli { display: flex; gap: 8px; align-items: center; padding: 6px 8px; border: 1px solid var(--ln); border-radius: 4px; margin-bottom: 4px; cursor: pointer; background: #10161800 }
-.eli.on { border-color: var(--ac2); background: #1d2427 }
-.pe-c { background: #0b0e0f; overflow: auto; display: grid; place-items: center; padding: 24px; position: relative }
+.eli.on { border-color: var(--ac2); background: var(--gb3) }
+.pe-c { background: var(--in); overflow: auto; display: grid; place-items: center; padding: 24px; position: relative }
 .pe-sz { position: relative; flex: none }
 .pe-stage { position: absolute; left: 0; top: 0; transform-origin: 0 0; outline: 1px dashed #8886 }
 .pe-stage.chk { background: repeating-conic-gradient(#3b4145 0 25%, #555d62 0 50%) 0 0/20px 20px }
@@ -34,7 +34,7 @@ body.pe-body #app { height: 100vh; display: flex; flex-direction: column }
 .hd.sw { left: 0; top: 100%; cursor: nesw-resize } .hd.w { left: 0; top: 50%; cursor: ew-resize }
 .fr { display: flex; align-items: center; gap: 6px; margin: 4px 0 }
 .fr > span { flex: 1; min-width: 0 }
-.fr input[type=number], .fr input[type=text], .fr select { width: 150px; padding: 2px 4px; background: #0e1315; border: 1px solid var(--ln); border-radius: 3px }
+.fr input[type=number], .fr input[type=text], .fr select { width: 150px; padding: 2px 4px; background: var(--in2); border: 1px solid var(--ln); border-radius: 3px }
 .fr input[type=range] { width: 100px } .fr output { width: 34px; text-align: right; font-size: 12px }
 .fr input[type=color] { width: 44px; height: 24px; padding: 0; border: 1px solid var(--ln); background: none }
 .pe-l .fr input[type=number] { width: 64px } .pe-l .fr input[type=text], .pe-l .fr select { width: 120px }

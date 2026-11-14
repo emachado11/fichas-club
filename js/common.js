@@ -1,5 +1,7 @@
 import { auth, onAuthStateChanged, signOut } from './firebase.js';
 import { initDice } from './dice.js';
+import { ensureProfile } from './profile.js';
+import { mountHeader } from './header.js';
 export const $ = s => document.querySelector(s);
 export const esc = t => String(t ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 export const qs = k => new URLSearchParams(location.search).get(k);
@@ -28,10 +30,12 @@ export function migrate(s) {
   if (ks.length && ks.every(k => /^\d+$/.test(k))) { const n = {}; ks.forEach(k => (LEG[+k] || []).forEach(nm => n[nm] = s.sk[k])); s.sk = n } else s.sk = s.sk || {};
   return s
 }
+/* Prioridade das imagens de estado: Morrendo > Ferido > Exausto > Cansado. Vale o primeiro estado que se aplica E tem imagem; senão, a principal. */
+export const FACE_ORDER = [['morrendo', s => s.pv <= 0], ['ferido', s => s.pv <= s.pvMax / 2], ['exausto', s => s.pd <= 0], ['cansado', s => s.pd <= s.pdMax / 2]];
 export const faceKey = s => {
   const i = s.img || {}; if (!i.main) return '';
-  if (s.pv <= 0 && i.morrendo) return 'morrendo'; if (s.pv <= s.pvMax / 2 && i.ferido) return 'ferido';
-  if (s.pd <= 0 && i.exausto) return 'exausto'; if (s.pd <= s.pdMax / 2 && i.cansado) return 'cansado'; return 'main'
+  for (const [k, cond] of FACE_ORDER) if (i[k] && cond(s)) return k;
+  return 'main'
 };
 export const face = s => { const k = faceKey(s); return k ? s.img[k] : '' };
 /* Todas as imagens de estado usam o MESMO enquadramento (s.crop). x e y são frações do tamanho do quadro. */
@@ -42,11 +46,10 @@ export const modal = h => { $('#modal').innerHTML = `<div class=mb>${h}</div>`; 
 export const close = () => $('#modal').classList.remove('on');
 export const clip = (s, m) => navigator.clipboard.writeText(s).then(() => toast(m));
 export const err = e => e?.code === 'permission-denied' || /permissions/i.test(e?.message || '') ? 'Sem permissão no Firestore. Publique as regras do arquivo firestore.rules.' : (e?.code || e?.message || String(e));
-export const guard = cb => onAuthStateChanged(auth, u => { if (u) cb(u); else { sessionStorage.next = location.href; location.href = 'index.html' } });
-const NAV = [['painel.html', 'Painel'], ['fichas.html', 'Fichas'], ['ficha-nova.html', 'Nova ficha'], ['campanhas.html', 'Campanhas'], ['campanha-nova.html', 'Nova campanha']];
+export const guard = cb => onAuthStateChanged(auth, async u => { if (u) { try { await ensureProfile(u) } catch { } cb(u) } else { sessionStorage.next = location.href; location.href = 'index.html' } });
 export function page(title, html, u) {
-  initDice(); const here = location.pathname.split('/').pop();
-  $('#app').innerHTML = `<div class=wrap><div class=bar0><nav class=row>${NAV.map(([h, t]) => `<a href=${h} class="${h == here ? 'on' : ''}">${t}</a>`).join('')}</nav><div class=row><span class=mt>${esc(u?.email || '')}</span>${u ? '<button class=g data-a=out>Sair</button>' : ''}</div></div><h2 style="margin-bottom:12px">${title}</h2>${html}</div>`
+  initDice(); mountHeader(u);
+  $('#app').innerHTML = `<div class=wrap>${title ? `<h2 class=pt>${title}</h2>` : ''}${html}</div>`
 }
 export function act(map) {
   const m = { close, out: () => signOut(auth).then(() => location.href = 'index.html'), ...map };
@@ -66,12 +69,22 @@ export function crop(im, sz, z = 1, ox = 0, oy = 0, cv) {
   const c = cv || document.createElement('canvas'); c.width = c.height = sz; const m = Math.min(im.width, im.height) / z;
   c.getContext('2d').drawImage(im, (im.width - m) / 2 * (1 + ox), (im.height - m) / 2 * (1 + oy), m, m, 0, 0, sz, sz); return c
 }
-export const jpg = c => c.toDataURL('image/jpeg', .82);
+/* Tem pixels transparentes? (amostra reduzida) */
+function hasAlpha(c) {
+  try { const t = document.createElement('canvas'); t.width = t.height = 48; const x = t.getContext('2d'); x.drawImage(c, 0, 0, 48, 48); const d = x.getImageData(0, 0, 48, 48).data; for (let i = 3; i < d.length; i += 4) if (d[i] < 250) return true } catch { }
+  return false
+}
+const WEBP = (() => { try { return document.createElement('canvas').toDataURL('image/webp').startsWith('data:image/webp') } catch { return false } })();
+/* Codifica o canvas: JPEG se for opaco; WebP/PNG se tiver transparência (assim o fundo transparente é mantido). */
+export const jpg = (c, q = .82) => !hasAlpha(c) ? c.toDataURL('image/jpeg', q) : WEBP ? c.toDataURL('image/webp', q) : c.toDataURL('image/png');
 export async function small(src) { try { return jpg(crop(await load(src), 256)) } catch { return src } }
 /* Reduz a imagem inteira (sem cortar) para caber no Firestore. Se não der (CORS), guarda o link original. */
 export function shrink(im, src, max = 512) {
   try {
-    const k = Math.min(1, max / Math.max(im.naturalWidth || im.width, im.naturalHeight || im.height)), w = Math.round((im.naturalWidth || im.width) * k), h = Math.round((im.naturalHeight || im.height) * k);
-    const c = document.createElement('canvas'); c.width = w; c.height = h; c.getContext('2d').drawImage(im, 0, 0, w, h); return c.toDataURL('image/jpeg', .85)
+    const W0 = im.naturalWidth || im.width, H0 = im.naturalHeight || im.height;
+    const draw = m => { const k = Math.min(1, m / Math.max(W0, H0)), c = document.createElement('canvas'); c.width = Math.round(W0 * k); c.height = Math.round(H0 * k); c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); return c };
+    let c = draw(max), out = jpg(c, .85);
+    if (out.startsWith('data:image/png') && max > 384) out = jpg(draw(384), .85);   // PNG é pesado: reduz mais para caber no limite de 1 MB da ficha
+    return out
   } catch { return src }
 }

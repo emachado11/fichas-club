@@ -77,14 +77,14 @@ button:hover,
 }
 
 .g {
-    background: #222a2d !important;
+    background: var(--gb) !important;
     border: 1px solid var(--ln) !important
 }
 
 input,
 select,
 textarea {
-    background: #0b0e0f;
+    background: var(--in);
     border: 1px solid var(--ln);
     border-radius: 3px;
     padding: .4em .5em;
@@ -199,7 +199,7 @@ nav a.on {
     border: 2px solid var(--c);
     border-radius: 10px;
     cursor: pointer;
-    background: #0b0e0f;
+    background: var(--in);
     overflow: hidden;
     opacity: .55;
     margin: 8px 0
@@ -313,7 +313,7 @@ nav a.on {
     display: none;
     position: absolute;
     z-index: 5;
-    background: #0b0e0f;
+    background: var(--in);
     border: 1px solid var(--ln);
     border-radius: 4px;
     min-width: 150px
@@ -333,7 +333,7 @@ nav a.on {
 }
 
 .opt:hover {
-    background: #222a2d
+    background: var(--gb)
 }
 
 .opt[data-v=Executor] {
@@ -397,7 +397,7 @@ nav a.on {
     display: flex;
     align-items: center;
     margin: 8px 0;
-    background: color-mix(in srgb, var(--ac) 20%, #0b0e0f);
+    background: color-mix(in srgb, var(--ac) 20%, var(--in));
     border: 1px solid var(--ac);
     border-radius: 4px;
     overflow: hidden;
@@ -450,7 +450,7 @@ nav a.on {
     grid-template-columns: 1fr auto auto 64px;
     gap: 6px;
     align-items: center;
-    background: #0e1315;
+    background: var(--in2);
     padding: 3px 6px;
     font: 600 12px Cinzel
 }
@@ -484,7 +484,7 @@ nav a.on {
     display: grid;
     gap: 4px;
     text-align: center;
-    background: #0b0e0f;
+    background: var(--in);
     border: 1px solid var(--ln);
     padding: 5px;
     border-radius: 5px
@@ -543,7 +543,7 @@ nav a.on {
 }
 
 .tabs button {
-    background: #222a2d
+    background: var(--gb)
 }
 
 .tabs button.on {
@@ -610,7 +610,7 @@ textarea.ot {
     text-align: left;
     width: 100%;
     margin: 4px 0;
-    background: #1d2427;
+    background: var(--gb3);
     border: 1px solid var(--ln)
 }
 
@@ -655,7 +655,7 @@ textarea.ot {
 /* ===== Parte 2: fundo, responsivo, centralizado, dados ===== */
 body,
 body.obs {
-    background: #07090a
+    background: var(--bg0)
 }
 
 body.obs {
@@ -720,7 +720,7 @@ nav {
 }
 
 .sheet .pn {
-    background: rgba(8, 12, 14, .62);
+    background: var(--bgp);
     backdrop-filter: blur(3px);
     box-shadow: 0 0 22px color-mix(in srgb, var(--ac) 22%, transparent)
 }
@@ -809,7 +809,7 @@ nav {
     height: 46px;
     padding: 6px;
     border-radius: 50%;
-    background: rgba(10, 13, 16, .9);
+    background: var(--pop);
     border: 1px solid var(--ac);
     color: var(--tx);
     display: grid;
@@ -830,7 +830,7 @@ nav {
     right: 0;
     top: 54px;
     width: min(420px, calc(100vw - 20px));
-    background: rgba(12, 14, 19, .97);
+    background: var(--pop);
     border: 1px solid var(--ln);
     border-radius: 10px;
     padding: 12px;
@@ -1014,7 +1014,7 @@ nav {
 .ce { display: grid; gap: 12px; width: min(100%, 420px); margin: auto }
 .ceh { display: flex; justify-content: space-between; align-items: center }
 .cex { padding: .2em .6em }
-.stage { position: relative; height: 330px; background: #0b0e0f; border-radius: 8px; overflow: hidden; cursor: grab; touch-action: none; user-select: none }
+.stage { position: relative; height: 330px; background: var(--in); border-radius: 8px; overflow: hidden; cursor: grab; touch-action: none; user-select: none }
 .stage.drag { cursor: grabbing }
 .stage img { position: absolute; left: 50%; top: 50%; max-width: none; pointer-events: none; user-select: none }
 .stage .gh { opacity: .35 }
@@ -1026,7 +1026,7 @@ nav {
 .cef { display: flex; justify-content: space-between; align-items: center }
 .lnk { background: none !important; color: var(--ac2); padding: 0 }
 .mundo { display: flex; margin-bottom: 8px; border: 1px solid var(--ln); border-radius: 6px; overflow: hidden }
-.mundo button { flex: 1; background: #1a2124; border-radius: 0; color: var(--mt) }
+.mundo button { flex: 1; background: var(--gb2); border-radius: 0; color: var(--mt) }
 .mundo button.on { background: var(--ac); color: var(--tx) }
 .chk { display: flex; align-items: center; gap: 8px; cursor: pointer }
 .gear { font-size: 18px; line-height: 1; padding: .3em .55em }

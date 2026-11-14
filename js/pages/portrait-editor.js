@@ -3,7 +3,7 @@
    ?sheet=<ficha> → layout próprio de uma ficha */
 import { guard, $, esc, toast, err, qs, act, clip, blank, migrate, faceKey } from '../common.js';
 import { db, doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, serverTimestamp } from '../firebase.js';
-import { createPortrait, mergeLayout, DEFAULT, SCHEMA, FONTS, getPath, setPath, clone } from '../portrait.js';
+import { createPortrait, mergeLayout, DEFAULT, SCHEMA, FONTS, getPath, setPath, clone, upscale, SCREEN } from '../portrait.js';
 
 const cid = qs('c'), sid = qs('sheet');
 const STATES = [['auto', 'Automático (pelos PV/PD)'], ['main', 'Normal'], ['ferido', 'Ferido'], ['morrendo', 'Morrendo'], ['cansado', 'Cansado'], ['exausto', 'Exausto']];
@@ -37,12 +37,12 @@ async function boot(u) {
     const open = new Set();
     $('#app').innerHTML = `<div class=pe-top>
   <a class="btn g" href="${back}">← Voltar</a><b class=pe-title>${esc(title)}</b>
-  <label class=pe-f>Tela <input type=number id=cw min=50 max=4000 value=${L.w}> × <input type=number id=ch min=50 max=4000 value=${L.h}></label>
+  <label class=pe-f>Tela <select id=preset><option value="">Personalizada</option><option value=2k>2K · 2560×1440</option><option value=fhd>Full HD · 1920×1080</option></select> <input type=number id=cw min=50 max=4000 value=${L.w}> × <input type=number id=ch min=50 max=4000 value=${L.h}></label>
   <label class=pe-f>Fundo <select id=bgm><option value=chk>Transparente (xadrez)</option><option value=dark>Escuro</option><option value=light>Claro</option><option value=green>Verde</option></select></label>
   <label class=pe-f>Zoom <select id=zoom><option value=auto>Auto</option>${[50, 75, 100, 150, 200, 300].map(z => `<option value=${z}>${z}%</option>`).join('')}</select></label>
   <label class=pe-f><input type=checkbox id=snap checked> Grade <select id=gs>${[1, 2, 5, 10, 20].map(z => `<option ${z == 5 ? 'selected' : ''}>${z}</option>`).join('')}</select></label>
   <span class=pe-sp></span><span id=ss class=mt></span>
-  <button class=g data-a=undo>Desfazer</button>${campLayout ? '<button class=g data-a=fromcamp>Copiar da campanha</button>' : ''}<button class=g data-a=reset>Padrão</button>${sheet ? '<button class=g data-a=copylink>Copiar link do OBS</button>' : ''}<button data-a=save>Salvar</button></div>
+  <button class=g data-a=undo>Desfazer</button>${campLayout ? '<button class=g data-a=fromcamp>Copiar da campanha</button>' : ''}<button class=g data-a=to2k title="Amplia este layout para o padrão 1040×340 em tela 2K, centralizado">Converter para 2K</button><button class=g data-a=reset>Padrão</button>${sheet ? '<button class=g data-a=copylink>Copiar link do OBS</button>' : ''}<button data-a=save>Salvar</button></div>
   ${usingCamp ? '<div class=pe-warn>Esta ficha está usando o portrait da campanha. Para este layout aparecer no OBS, desmarque “Usar portrait da campanha” na engrenagem ⚙ da ficha.</div>' : ''}
   <div class=pe-main><aside class=pe-l><h4>Elementos</h4><div id=els></div><h4>Pré-visualização</h4><div id=prev></div></aside>
   <main id=wrap class=pe-c><div id=sz class=pe-sz><div id=stage class="pe-stage chk"><div id=pv></div><div id=ov></div></div></div></main><aside id=insp class=pe-r></aside></div>`;
@@ -107,7 +107,7 @@ async function boot(u) {
             if (e.shiftKey && el.shape) { const m = Math.max(w, h); if (dr.h.includes('w')) x += w - m; if (dr.h.includes('n')) y += h - m; w = h = m }
             Object.assign(el, { x: sn(x), y: sn(y), w: Math.max(1, sn(w)), h: Math.max(1, sn(h)) })
         }
-        pg.move(dr.id); drawOv(); syncPos()
+        pg.move(dr.id, el); drawOv(); syncPos()
     });
     addEventListener('pointerup', () => { if (dr) { dr = null; commit() } });
     addEventListener('keydown', e => {
@@ -116,7 +116,7 @@ async function boot(u) {
         if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() == 'z' && !typing) { e.preventDefault(); A.undo(); return }
         if (typing || !e.key.startsWith('Arrow')) return; e.preventDefault();
         const el = L.el[sel], k = e.shiftKey ? 10 : 1; if (e.key == 'ArrowLeft') el.x -= k; if (e.key == 'ArrowRight') el.x += k; if (e.key == 'ArrowUp') el.y -= k; if (e.key == 'ArrowDown') el.y += k;
-        pg.move(sel); drawOv(); syncPos(); commit()
+        pg.move(sel, el); drawOv(); syncPos(); commit()
     });
 
     /* ---------- inspetor ---------- */
@@ -143,7 +143,7 @@ async function boot(u) {
         const t = e.target, p = t.dataset.p; if (!p) return;
         if (t.type == 'number' && t.value === '') return;
         setPath(L.el[sel], p, coerce(t)); if (t.type == 'range') t.nextElementSibling.textContent = t.value;
-        if (['x', 'y', 'w', 'h', 'rot'].includes(p)) { pg.move(sel); drawOv() } else rebuild()
+        if (['x', 'y', 'w', 'h', 'rot', 'opacity'].includes(p)) { pg.move(sel, L.el[sel]); drawOv() } else rebuild()
     });
     insp.addEventListener('change', e => { if (e.target.dataset.p) { commit(); if (['z'].includes(e.target.dataset.p)) rebuild() } if (e.target.dataset.on) toggle(e.target) });
     function toggle(t) { L.el[t.dataset.on].on = t.checked; commit(); rebuild(); drawEls(); if (t.dataset.on == sel) drawInsp() }
@@ -151,13 +151,16 @@ async function boot(u) {
 
     /* ---------- barra de cima ---------- */
     $('#cw').oninput = $('#ch').oninput = () => { const w = +$('#cw').value, h = +$('#ch').value; if (w >= 50 && h >= 50) { L.w = w; L.h = h; pg.setLayout(L); fit(); commit() } };
+    const syncPreset = () => { $('#preset').value = L.w == 2560 && L.h == 1440 ? '2k' : L.w == 1920 && L.h == 1080 ? 'fhd' : '' };
+    $('#preset').onchange = () => { const v = $('#preset').value; if (!v) return; const [w, h] = v == '2k' ? [2560, 1440] : [1920, 1080]; L.w = w; L.h = h; $('#cw').value = w; $('#ch').value = h; pg.setLayout(L); drawOv(); fit(); commit() };
     $('#bgm').onchange = () => { $('#stage').className = 'pe-stage ' + $('#bgm').value };
     $('#zoom').onchange = fit; addEventListener('resize', fit);
-    const setL = x => { L = mergeLayout(x); $('#cw').value = L.w; $('#ch').value = L.h; if (!L.el[sel]) sel = 'portrait'; rebuild(); fit(); drawEls(); drawInsp() };
+    const setL = x => { L = mergeLayout(x); syncPreset(); $('#cw').value = L.w; $('#ch').value = L.h; if (!L.el[sel]) sel = 'portrait'; rebuild(); fit(); drawEls(); drawInsp() };
     const A = {
         pick: t => { if (t.dataset.id == sel) return; sel = t.dataset.id; drawEls(); drawInsp(); drawOv() },
         dmg: () => { pd.pv = Math.max(0, pd.pv - 1); drawPrev(); push() },
         undo: () => { const p = hist.pop(); if (!p) return toast('Nada para desfazer'); last = p; dirty = true; setL(JSON.parse(p)) },
+        to2k: () => { const e = L.el.bg; const k = 1040 / e.w; if (!confirm('Ampliar o layout para 1040×340 centralizado numa tela 2K (2560×1440)? Dá para desfazer.')) return; setL(upscale(L, k, SCREEN.w, SCREEN.h)); commit() },
         reset: () => { if (!confirm('Voltar todo o layout ao padrão?')) return; setL(DEFAULT()); commit() },
         fromcamp: () => { if (!confirm('Substituir este layout pelo layout base da campanha?')) return; setL(clone(campLayout)); commit() },
         copylink: () => clip(new URL('obs.html?id=' + sid, location.href).href, 'Link do OBS copiado'),
@@ -172,6 +175,6 @@ async function boot(u) {
     };
     act(A);
     addEventListener('beforeunload', e => { if (dirty) { e.preventDefault(); e.returnValue = '' } });
-    drawEls(); drawInsp(); drawPrev(); drawOv(); fit(); push();
+    drawEls(); drawInsp(); drawPrev(); drawOv(); fit(); push(); syncPreset();
     if (document.fonts?.ready) document.fonts.ready.then(() => { pg.setLayout(L); push() });
 }
