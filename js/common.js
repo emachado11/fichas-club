@@ -14,6 +14,29 @@ const disableAutocomplete = node => {
 disableAutocomplete(document.documentElement);
 new MutationObserver(records => records.forEach(record => record.addedNodes.forEach(disableAutocomplete)))
   .observe(document.documentElement, { childList: true, subtree: true });
+function syncEntityThemeBackground() {
+  const active = document.documentElement.dataset.palette === 'entidade' && !document.body.classList.contains('obs');
+  let video = document.getElementById('entity-theme-background');
+  if (!active) { video?.remove(); return }
+  if (video) return;
+  video = document.createElement('video');
+  video.id = 'entity-theme-background';
+  video.src = 'img/Padrao.mp4';
+  video.autoplay = true;
+  video.loop = true;
+  video.muted = true;
+  video.defaultMuted = true;
+  video.volume = 0;
+  video.controls = false;
+  video.playsInline = true;
+  video.setAttribute('aria-hidden', 'true');
+  video.setAttribute('muted', '');
+  video.tabIndex = -1;
+  document.body.prepend(video);
+  video.play().catch(error => console.warn('Não foi possível reproduzir o vídeo do tema Entidade do Medo.', error))
+}
+new MutationObserver(syncEntityThemeBackground).observe(document.documentElement, { attributes: true, attributeFilter: ['data-palette'] });
+syncEntityThemeBackground();
 export const D = [4, 6, 8, 10, 12, 20], AN = { f: 'Físico', m: 'Mente', e: 'Emoção' };
 const L1 = [["ACROBACIA", "f"], ["APTIDÃO", "m"], ["ATLETISMO", "f"], ["CRIME", "f"], ["DISCIPLINA", "e"], ["ENGANAÇÃO", "e"], ["FURTIVIDADE", "f"], ["INTIMIDAÇÃO", "e"], ["INTUIÇÃO", "e"], ["LUTA", "f"], ["MÁQUINAS", "m"], ["MEDICINA", "m"], ["OCULTISMO", "m"], ["PERCEPÇÃO", "m"], ["PERSUASÃO", "e"], ["PESQUISA", "m"], ["PONTARIA", "f"], ["SOBREVIVÊNCIA", "m"], ["TECNOLOGIA", "m"], ["VIGOR", "f"]];
 const L2 = [["ACROBACIA", "f"], ["ANIMAIS", "e"], ["APTIDÃO", "m"], ["ATLETISMO", "f"], ["BRUXARIA", "m"], ["CARISMA", "e"], ["CRIME", "f"], ["DISCIPLINA", "e"], ["ENGANAÇÃO", "e"], ["FURTIVIDADE", "f"], ["INSPECIONAR", "m"], ["INTIMIDAR", "e"], ["INTUIÇÃO", "e"], ["LUTA", "f"], ["MEDICINA", "m"], ["OFÍCIO", "m"], ["PERCEPÇÃO", "m"], ["PONTARIA", "f"], ["SOBREVIVÊNCIA", "m"], ["VIGOR", "f"]];

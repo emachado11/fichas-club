@@ -8,7 +8,13 @@ export const validHandle = h => /^[a-z0-9_.]{3,20}$/.test(h);
 export const isEmail = t => /^\S+@\S+\.\S+$/.test(String(t).trim());
 export const sha = async t => [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(String(t).trim().toLowerCase())))].map(b => b.toString(16).padStart(2, '0')).join('');
 export const MODES = { light: 'Claro', dark: 'Escuro' };
-export const PALETTES = { executor: 'Executor', analista: 'Analista', vigilante: 'Vigilante', conhecimento: 'Conhecimento', morte: 'Morte', sangue: 'Sangue', energia: 'Energia', medo: 'Medo' };
+export const ENTITY_THEME_UNLOCK_KEY = 'club-entity-theme-unlocked';
+export const ENTITY_ACHIEVEMENT_ID = 'entity-fear';
+export const PALETTES = { executor: 'Executor', analista: 'Analista', vigilante: 'Vigilante', conhecimento: 'Conhecimento', morte: 'Morte', sangue: 'Sangue', energia: 'Energia', medo: 'Medo', entidade: 'Entidade do Medo' };
+export const isEntityThemeUnlocked = () => {
+  if (PRIV.entityThemeUnlocked === true || (Array.isArray(PRIV.achievements) && PRIV.achievements.includes(ENTITY_ACHIEVEMENT_ID))) return true;
+  try { return localStorage.getItem(ENTITY_THEME_UNLOCK_KEY) === 'true' } catch { return false }
+};
 export const applyTheme = t => { t = MODES[t] ? t : 'dark'; document.documentElement.dataset.theme = t; try { localStorage.theme = t } catch { } };
 export const applyPalette = p => { p = PALETTES[p] ? p : 'executor'; document.documentElement.dataset.palette = p; try { localStorage.palette = p } catch { } };
 
@@ -51,6 +57,18 @@ export async function getProfile(uid) {
 }
 /* Preferências e atalhos privados do usuário (tema, idioma, recentes, ordem das fichas) */
 export const savePriv = async (uid, patch) => { Object.assign(PRIV, patch); await setDoc(doc(db, 'users', uid), patch, { merge: true }) };
+export function unlockEntityTheme(uid) {
+  try { localStorage.setItem(ENTITY_THEME_UNLOCK_KEY, 'true') }
+  catch (error) { console.warn('Não foi possível salvar o desbloqueio do tema Entidade do Medo.', error) }
+  PRIV.entityThemeUnlocked = true;
+  PRIV.achievements = [...new Set([...(Array.isArray(PRIV.achievements) ? PRIV.achievements : []), ENTITY_ACHIEVEMENT_ID])];
+  const saving = uid ? setDoc(doc(db, 'users', uid), {
+    entityThemeUnlocked: true,
+    achievements: arrayUnion(ENTITY_ACHIEVEMENT_ID)
+  }, { merge: true }) : Promise.resolve();
+  window.dispatchEvent(new Event('club-theme-unlocked'));
+  return saving
+}
 export const trackSheet = (uid, id) => { const r = [id, ...(PRIV.recent || []).filter(x => x !== id)].slice(0, 9); if (r[0] === (PRIV.recent || [])[0]) return; savePriv(uid, { recent: r }).catch(() => { }) };
 export const trackCampaign = (uid, id) => { if (PRIV.lastCampaign === id) return; savePriv(uid, { lastCampaign: id }).catch(() => { }) };
 
