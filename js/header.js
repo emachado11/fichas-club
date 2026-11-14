@@ -21,7 +21,7 @@ export function mountHeader(u) {
   let bn = document.getElementById('bnav'); if (!bn) { bn = document.createElement('nav'); bn.id = 'bnav'; document.body.append(bn) }
   bn.innerHTML = NAV.map(([href, t, k]) => `<a href=${href} class="${isOn(k) ? 'on' : ''}">${IC[k]}<span>${t}</span></a>`).join('');
   h.innerHTML = `<div class=hin>
-  <a class=logo href=painel.html aria-label="The Club — início"><img src="img/logo.png" alt="The Club"></a>
+  <a class=logo href=painel.html aria-label="The Club | Início"><img src="img/logo.png" alt="The Club"></a>
   <nav class=hnav>${NAV.map(([href, t, k]) => `<a href=${href} class="${isOn(k) ? 'on' : ''}">${IC[k]}<span>${t}</span></a>`).join('')}</nav>
   <div class=hact>${!u ? '<a class=btn href=index.html>Entrar</a>' : ''}
     ${!u ? '<template>' : ''}<div class=hd data-h=fr><button class=ib data-hd=fr aria-label="Amigos" aria-expanded=false>${IC.friends}<span class=act-label>Amigos</span></button><div class=menu role=menu><h4>Amigos</h4><div class=ml id=hfriends><p class=mt>Carregando…</p></div><h4 class=mt>Pedidos</h4><div class=ml id=hrequests><p class=mt>Carregando…</p></div><a class=mf href="perfil.html#amigos">Gerenciar amigos</a></div></div>

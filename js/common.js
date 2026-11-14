@@ -5,6 +5,15 @@ import { mountHeader } from './header.js';
 export const $ = s => document.querySelector(s);
 export const esc = t => String(t ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 export const qs = k => new URLSearchParams(location.search).get(k);
+const AUTOCOMPLETE_FIELDS = 'input:not([type]),input[type=text],input[type=search],input[type=email],input[type=url],input[type=tel],input[type=number],textarea';
+const disableAutocomplete = node => {
+  if (node.nodeType !== 1) return;
+  if (node.matches(AUTOCOMPLETE_FIELDS)) node.setAttribute('autocomplete', 'off');
+  node.querySelectorAll(AUTOCOMPLETE_FIELDS).forEach(field => field.setAttribute('autocomplete', 'off'))
+};
+disableAutocomplete(document.documentElement);
+new MutationObserver(records => records.forEach(record => record.addedNodes.forEach(disableAutocomplete)))
+  .observe(document.documentElement, { childList: true, subtree: true });
 export const D = [4, 6, 8, 10, 12, 20], AN = { f: 'Físico', m: 'Mente', e: 'Emoção' };
 const L1 = [["ACROBACIA", "f"], ["APTIDÃO", "m"], ["ATLETISMO", "f"], ["CRIME", "f"], ["DISCIPLINA", "e"], ["ENGANAÇÃO", "e"], ["FURTIVIDADE", "f"], ["INTIMIDAÇÃO", "e"], ["INTUIÇÃO", "e"], ["LUTA", "f"], ["MÁQUINAS", "m"], ["MEDICINA", "m"], ["OCULTISMO", "m"], ["PERCEPÇÃO", "m"], ["PERSUASÃO", "e"], ["PESQUISA", "m"], ["PONTARIA", "f"], ["SOBREVIVÊNCIA", "m"], ["TECNOLOGIA", "m"], ["VIGOR", "f"]];
 const L2 = [["ACROBACIA", "f"], ["ANIMAIS", "e"], ["APTIDÃO", "m"], ["ATLETISMO", "f"], ["BRUXARIA", "m"], ["CARISMA", "e"], ["CRIME", "f"], ["DISCIPLINA", "e"], ["ENGANAÇÃO", "e"], ["FURTIVIDADE", "f"], ["INSPECIONAR", "m"], ["INTIMIDAR", "e"], ["INTUIÇÃO", "e"], ["LUTA", "f"], ["MEDICINA", "m"], ["OFÍCIO", "m"], ["PERCEPÇÃO", "m"], ["PONTARIA", "f"], ["SOBREVIVÊNCIA", "m"], ["VIGOR", "f"]];
@@ -92,6 +101,7 @@ export const clip = (s, m) => navigator.clipboard.writeText(s).then(() => toast(
 export const err = e => e?.code === 'permission-denied' || /permissions/i.test(e?.message || '') ? 'O Firestore negou a permissão para esta ação.' : (e?.code || e?.message || String(e));
 export const guard = cb => onAuthStateChanged(auth, async u => { if (u) { try { await ensureProfile(u) } catch { } cb(u) } else { sessionStorage.next = location.href; location.href = 'index.html' } });
 export function page(title, html, u) {
+  document.title = title ? `${title} | The Club` : 'The Club';
   initDice(); mountHeader(u);
   $('#app').innerHTML = `<div class=wrap>${title ? `<h2 class=pt>${title}</h2>` : ''}${html}</div>`
 }

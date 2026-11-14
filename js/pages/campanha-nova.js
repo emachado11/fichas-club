@@ -6,7 +6,7 @@ guard(u => {
     let banner = '', thumb = '';
     page('Nova campanha', `<div class=pn style="display:grid;gap:12px;max-width:640px"><label class=fld><span>Nome da campanha</span><input id=nm maxlength=50></label>
   <label class=fld><span>Descrição</span><textarea id=ds rows=4 maxlength=400 placeholder="Sobre o que é essa campanha?"></textarea></label>
-  <div class=fld><span>Banner (proporção 8:3)</span><div class=cbn id=bn data-a=banner role=button tabindex=0>+ Escolher imagem</div></div>
+  <div class=fld><span>Banner (proporção 8:3, ex.: 960 × 360 pixels)</span><div class=cbn id=bn data-a=banner role=button tabindex=0>+ Escolher imagem</div></div>
   <button data-a=create>Criar campanha</button><p id=er class=er></p></div>`, u);
     act({
         banner: async () => {
