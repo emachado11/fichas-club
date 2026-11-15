@@ -1,12 +1,36 @@
 import { track, D, AN, SKILLS, MUNDOS, PERF, CAT, TABN, $, esc, modal, close, act, face, faceKey, picHTML, cropCss, small, load, rd, shrink, toast } from './common.js';
+import { dieIcon } from './dice.js?v=6';
 
 /* Tamanho (px) do círculo do editor de enquadramento (estilo Discord) */
 const RING = 260;
+const SKILL_DETAILS = {
+    APTIDÃO: {
+        moderno: ['Artes', 'Atualidades', 'Burocracia', 'Exatas', 'Humanas', 'Tática'],
+        medieval: ['Artes', 'Erudição', 'Folclore', 'Guerra', 'Nobreza', 'Religião']
+    },
+    OFÍCIO: ['Alquimía', 'Carpintaria', 'Metalurgia']
+};
+const skillDetails = (skill, world) => {
+    const details = SKILL_DETAILS[skill];
+    return Array.isArray(details) ? details : details?.[world] || []
+};
 
 export function mountSheet(root, s, o = {}) {
     let tab = 'hab', lp = 0, lt, later = false, ed = null;
+    s.skillInfo ||= {};
+    const normalizeSkillInfo = () => Object.keys(SKILL_DETAILS).forEach(skill => {
+        const options = skillDetails(skill, s.mundo);
+        if (!options.includes(s.skillInfo[skill])) s.skillInfo[skill] = options[0]
+    });
+    normalizeSkillInfo();
     const save = () => { if (!o.ro) o.onSave?.() };
-    const render = () => { document.body.dataset.p = s.perfil; root.innerHTML = html() };
+    const render = () => {
+        document.body.dataset.p = s.perfil; root.innerHTML = html();
+        if (o.ro) root.querySelectorAll('button,select,input,textarea,[contenteditable]').forEach(element => {
+            if (element.hasAttribute('contenteditable')) element.contentEditable = 'false';
+            else element.disabled = true
+        })
+    };
     const upd = (f, re = true) => { f(s); save(); if (re) render() };
     /* Chamado quando chegam dados novos de outro dispositivo. Não re-renderiza enquanto a pessoa digita. */
     const refresh = () => {
@@ -18,11 +42,11 @@ export function mountSheet(root, s, o = {}) {
     /* Aplica uma mudança no máximo (PV/PD) pela DIFERENÇA do atributo, preservando bônus/penalidades manuais. */
     const shiftMax = (s, k, dl) => {
         const mx = k + 'Max'; s[mx] = Math.max(1, s[mx] + dl);
-        s[k] = Math.min(dl > 0 ? s[k] + dl : s[k], s[mx])
+        s[k] = Math.max(0, dl > 0 ? s[k] + dl : s[k])
     };
 
     function html() {
-        const a = s.a, f = face(s), L = s[tab] || [], SKL = SKILLS[s.mundo] || SKILLS.moderno;
+        const a = s.a, f = face(s), L = s[tab] || [], SKL = SKILLS[s.mundo] || SKILLS.moderno, addLabel = { hab: 'habilidade', equip: 'equipamento', itens: 'item' }[tab];
         const bar = (k, l) => `<div class=st><div class=f style="width:${Math.max(0, Math.min(100, s[k] / (s[k + 'Max'] || 1) * 100))}%"></div><button data-a=cur data-k=${k} data-d=-1>‹</button><div class=n>${l} <span contenteditable data-ce=${k}>${s[k]}</span>/<span contenteditable data-ce=${k}Max>${s[k + 'Max']}</span></div><button data-a=cur data-k=${k} data-d=1>›</button></div>`;
         return `<div class="sheet ${o.ro ? 'ro' : ''}">
   <div class=pn><div class=prof><div class=pic data-a=photo>${f ? picHTML(f, s.crop) : '+'}</div><div class=pi>
@@ -30,12 +54,12 @@ export function mountSheet(root, s, o = {}) {
    <div class=dd><button data-a=dd>${s.perfil} ▾</button><div class=ddm>${Object.keys(PERF).map(p => `<div class=opt data-a=perfil data-v=${p}>${p}<i title="${esc(PERF[p])}">?</i></div>`).join('')}</div></div>
    <input data-k=ocup value="${esc(s.ocup)}" maxlength=28 placeholder="Ocupação">
    <label>Nível <select data-k=nivel>${[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => `<option ${n == s.nivel ? 'selected' : ''}>${n}</option>`).join('')}</select></label></div></div>
-   <div class=ttl>ATRIBUTOS</div><div class=at>${['f', 'm', 'e'].map(k => `<div>${AN[k]}<div class=v>${D[a[k]]}</div><button class=s data-a=attr data-k=${k} data-d=-1>−</button><button class=s data-a=attr data-k=${k} data-d=1>+</button></div>`).join('')}</div>
+   <div class=ttl>ATRIBUTOS</div><div class=at>${['f', 'm', 'e'].map(k => `<div>${AN[k]}<div class="v die-value">${dieIcon(D[a[k]])}<span>${D[a[k]]}</span></div><button class=s data-a=attr data-k=${k} data-d=-1>−</button><button class=s data-a=attr data-k=${k} data-d=1>+</button></div>`).join('')}</div>
    ${bar('pv', 'PV')}${bar('pd', 'PD')}<div class=mod>Modificadores de perícias (em construção)</div></div>
-  <div class=pn><div class=mundo role=group aria-label="Mundo">${Object.keys(MUNDOS).map(m => `<button class="${s.mundo == m ? 'on' : ''}" data-a=mundo data-v=${m} aria-pressed=${s.mundo == m}>${MUNDOS[m]}</button>`).join('')}</div><div class=ttl>PERÍCIAS</div><div class=skl>${SKL.map(([n, k]) => `<div class=sk><span>${n}</span><select data-sk="${esc(n)}">${D.map((d, j) => `<option value=${j} ${(s.sk[n] || 0) == j ? 'selected' : ''}>${d}</option>`).join('')}</select><b>${D[a[k]]}</b><em>${AN[k]}</em></div>`).join('')}</div></div>
+  <div class=pn><div class=mundo role=group aria-label="Mundo">${Object.keys(MUNDOS).map(m => `<button class="${s.mundo == m ? 'on' : ''}" data-a=mundo data-v=${m} aria-pressed=${s.mundo == m}>${MUNDOS[m]}</button>`).join('')}</div><div class=ttl>PERÍCIAS</div><div class=skl>${SKL.map(([n, k]) => { const details = skillDetails(n, s.mundo), skillDie = D[s.sk[n] || 0], attrDie = D[a[k]]; return `<div class="sk ${details.length ? 'sk-special' : ''}"><span class=sk-name><span>${n}</span>${details.length ? `<select class=skill-detail data-detail="${esc(n)}" aria-label="Especialização em ${esc(n)}">${details.map(x => `<option ${s.skillInfo[n] === x ? 'selected' : ''}>${x}</option>`).join('')}</select>` : ''}</span><span class=die-pick>${dieIcon(skillDie, skillDie)}<select data-sk="${esc(n)}" aria-label="Dado de ${esc(n)}">${D.map((d, j) => `<option value=${j} ${(s.sk[n] || 0) == j ? 'selected' : ''}>d${d}</option>`).join('')}</select></span><span class=die-plus aria-hidden=true>+</span><span class=sk-attr>${dieIcon(attrDie, attrDie)}</span><em>${AN[k]}</em></div>` }).join('')}</div></div>
   <div style="display:grid;gap:12px"><div class=pn><div class=row style="justify-content:space-between"><b class=cz>Pontos de relação</b><button data-a=addrel>+</button></div><div class=rels>${s.rel.map((r, i) => `<div class=rc><div class=ph data-a=relph data-i=${i} style="${r.img ? `background-image:url('${esc(r.img)}')` : ''}">${r.img ? '' : 'Clique para adicionar uma foto.'}</div><input data-r=${i} value="${esc(r.name)}" maxlength=20 placeholder="Nome aqui"><div class=dots>${[0, 1, 2].map(j => `<div class="dot ${r.pts > j ? 'p' : r.pts < 0 && -r.pts > j ? 'n' : ''}" data-dot=${i}:${j}>${r.pts < 0 && -r.pts > j ? '×' : ''}</div>`).join('')}</div><button class=g data-a=rmrel data-i=${i}>Remover</button></div>`).join('')}</div></div>
-  <div class=pn><div class=tabs>${Object.keys(TABN).map(t => `<button class="${tab == t ? 'on' : ''}" data-a=tab data-v=${t}>${TABN[t]}</button>`).join('')}${tab != 'outros' ? '<button data-a=cat style="margin-left:auto">+</button>' : ''}</div>
-  <div class=box>${tab == 'outros' ? `<textarea class=ot data-k=outros placeholder="Anotações...">${esc(s.outros)}</textarea>` : L.length ? L.map((x, i) => `<div class=it><b>${esc(x.name)}</b><p>${esc(x.description)}</p><button class=g data-a=rm data-i=${i}>×</button></div>`).join('') : `<p class=mt>Adicione itens com o botão +.</p>`}</div></div></div></div>`
+  <div class=pn><div class=tabs>${Object.keys(TABN).map(t => `<button class="${tab == t ? 'on' : ''}" data-a=tab data-v=${t}>${TABN[t]}</button>`).join('')}</div>
+  <div class="box ${tab == 'outros' ? 'box-notes' : ''}"><div class=box-content>${tab == 'outros' ? `<textarea class=ot data-k=outros placeholder="Anotações...">${esc(s.outros)}</textarea>` : L.length ? L.map((x, i) => `<div class=it><b>${esc(x.name)}</b><p>${esc(x.description)}</p><button class=g data-a=rm data-i=${i}>×</button></div>`).join('') : `<p class=mt>Adicione itens com o botão +.</p>`}</div>${tab != 'outros' ? `<div class=box-footer><button data-a=cat aria-label="Adicionar ${addLabel}" title="Adicionar ${addLabel}">+</button></div>` : ''}</div></div></div></div>`
     }
 
     /* ===== Foto do agente ===== */
@@ -56,26 +80,26 @@ export function mountSheet(root, s, o = {}) {
 
     /* ===== Editor de enquadramento (estilo Discord): arraste a foto e use o zoom ===== */
     function openCrop(img, keep) {
-        const im = img.im, W = im.naturalWidth || im.width, H = im.naturalHeight || im.height, mn = Math.min(W, H);
+        const im = img.im, W = im.naturalWidth || im.width, H = im.naturalHeight || im.height, mx = Math.max(W, H);
         const ring = innerWidth <= 600 ? Math.max(180, Math.min(RING, innerWidth - 100)) : RING;
         const c0 = keep ? s.crop : { z: 1, x: 0, y: 0 };
         ed = { img, z: c0.z || 1, x: c0.x || 0, y: c0.y || 0 };
         modal(`<div class=ce><div class=ceh><h3>Editar imagem</h3><button class="g cex" data-a=cecancel aria-label=Fechar>✕</button></div>
   <div class=stage id=cst><img class=gh id=cg draggable=false src="${esc(img.data)}" alt=""><div class=ring id=cr><img id=ci draggable=false src="${esc(img.data)}" alt=""></div></div>
-  <div class=zrow><span class=zi>▫</span><input type=range id=cz min=1 max=4 step=.01 value=${ed.z} aria-label=Zoom><span class="zi lg">▣</span></div>
-  <p class=mt style="text-align:center;font-size:14px;margin:0">Arraste para posicionar · role ou use o controle para dar zoom</p>
+  <div class=zrow><span class=zi>▫</span><input type=range id=cz min=.5 max=4 step=.01 value=${ed.z} aria-label=Zoom><span class="zi lg">▣</span></div>
+  <p class=mt style="text-align:center;font-size:14px;margin:0">Arraste para reposicionar · diminua o zoom para mostrar mais da imagem</p>
   <div class=cef><button class="g lnk" data-a=cereset>Redefinir</button><span class=row><button class=g data-a=cecancel>Cancelar</button><button data-a=ceapply>Aplicar</button></span></div></div>`);
         const st = $('#cst'), ci = $('#ci'), cg = $('#cg'), cr = $('#cr'), cz = $('#cz');
         cr.style.width = ring + 'px'; cr.style.height = ring + 'px';
-        const lim = () => ({ x: Math.max(0, (W / mn * ed.z - 1) / 2), y: Math.max(0, (H / mn * ed.z - 1) / 2) });
+        const lim = () => ({ x: Math.abs((W / mx * ed.z - 1) / 2), y: Math.abs((H / mx * ed.z - 1) / 2) });
         const draw = () => {
             const l = lim(); ed.x = clamp(ed.x, -l.x, l.x); ed.y = clamp(ed.y, -l.y, l.y);
-            [ci, cg].forEach(e => { e.style.width = W / mn * ring * ed.z + 'px'; e.style.height = H / mn * ring * ed.z + 'px'; e.style.transform = `translate(-50%,-50%) translate(${ed.x * ring}px,${ed.y * ring}px)` });
+            [ci, cg].forEach(e => { e.style.width = W / mx * ring * ed.z + 'px'; e.style.height = H / mx * ring * ed.z + 'px'; e.style.transform = `translate(-50%,-50%) translate(${ed.x * ring}px,${ed.y * ring}px)` });
             cz.value = ed.z
         };
         draw();
         cz.oninput = () => { ed.z = +cz.value; draw() };
-        st.onwheel = e => { e.preventDefault(); ed.z = clamp(ed.z - e.deltaY * .002, 1, 4); draw() };
+        st.onwheel = e => { e.preventDefault(); ed.z = clamp(ed.z - e.deltaY * .002, .5, 4); draw() };
         let dr = null;
         st.onpointerdown = e => { dr = { px: e.clientX, py: e.clientY, x: ed.x, y: ed.y }; st.setPointerCapture(e.pointerId); st.classList.add('drag') };
         st.onpointermove = e => { if (!dr) return; ed.x = dr.x + (e.clientX - dr.px) / ring; ed.y = dr.y + (e.clientY - dr.py) / ring; draw() };
@@ -101,8 +125,8 @@ export function mountSheet(root, s, o = {}) {
             const dl = D[s.a[k]] - old; if (!dl) return;
             if (k == 'f') shiftMax(s, 'pv', dl); if (k == 'e') shiftMax(s, 'pd', dl)
         }),
-        cur: t => upd(s => { const k = t.dataset.k; s[k] = Math.min(s[k + 'Max'], s[k] + +t.dataset.d) }),
-        mundo: t => upd(s => s.mundo = t.dataset.v),
+        cur: t => upd(s => { const k = t.dataset.k; s[k] = Math.max(0, s[k] + +t.dataset.d) }),
+        mundo: t => upd(s => { s.mundo = t.dataset.v; normalizeSkillInfo() }),
         tab: t => { tab = t.dataset.v; render() }, rm: t => upd(s => s[tab].splice(+t.dataset.i, 1)),
         cat: showCatalog,
         createcustom: showCustomCatalogForm,
@@ -149,7 +173,8 @@ export function mountSheet(root, s, o = {}) {
     track(document, 'change', e => {
         const t = e.target;
         if (t.dataset.k == 'nivel') upd(s => s.nivel = +t.value, false);
-        if (t.dataset.sk !== undefined) upd(s => s.sk[t.dataset.sk] = +t.value, false)
+        if (t.dataset.sk !== undefined) upd(s => s.sk[t.dataset.sk] = +t.value);
+        if (t.dataset.detail !== undefined) upd(s => { s.skillInfo = s.skillInfo || {}; if (t.value) s.skillInfo[t.dataset.detail] = t.value; else delete s.skillInfo[t.dataset.detail] }, false)
     });
     track(document, 'focusout', e => {
         const t = e.target, k = t.dataset?.ce;
@@ -157,7 +182,7 @@ export function mountSheet(root, s, o = {}) {
         later = false;
         upd(s => {
             let v = parseInt(t.textContent); if (isNaN(v)) v = s[k];
-            if (k.endsWith('Max')) { const b = k.slice(0, 2); s[k] = Math.max(1, v); s[b] = Math.min(s[b], s[k]) } else s[k] = Math.min(v, s[k + 'Max'])
+            if (k.endsWith('Max')) s[k] = Math.max(1, v); else s[k] = Math.max(0, v)
         })
     });
     track(document, 'keydown', e => { if (e.key === 'Enter' && e.target.dataset?.ce) { e.preventDefault(); e.target.blur() } });

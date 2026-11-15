@@ -8,6 +8,52 @@
     color-scheme: dark
 }
 
+.die-pick {
+    width: 42px;
+    height: 34px;
+    position: relative;
+    display: grid;
+    place-items: center;
+    color: var(--ac2)
+}
+
+.sk .dc {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 26px;
+    height: 26px;
+    transform: translate(-50%, -50%);
+    --die-edge: color-mix(in srgb, var(--in) 70%, transparent);
+    --die-label: var(--tx)
+}
+
+.die-pick select {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    appearance: none;
+    opacity: .01;
+    cursor: pointer
+}
+
+.sk-attr {
+    width: 42px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    position: relative;
+    color: var(--ac2)
+}
+
+.die-plus {
+    color: var(--mt);
+    text-align: center;
+    font: 700 16px Cinzel, serif;
+    line-height: 1
+}
+
 * {
     box-sizing: border-box
 }
@@ -395,13 +441,59 @@ nav a.on {
 
 .at .v {
     font: 700 30px Cinzel;
-    background: var(--ac);
-    border-radius: 4px;
     margin: 4px auto;
     width: 54px;
     height: 54px;
     display: grid;
     place-items: center
+}
+
+.die-value {
+    position: relative;
+    isolation: isolate;
+}
+
+.die-value .dc {
+    position: absolute;
+    inset: 3px;
+    width: calc(100% - 6px);
+    height: calc(100% - 6px);
+    z-index: -1;
+    color: var(--ac2);
+    --die-edge: color-mix(in srgb, var(--in) 70%, transparent);
+}
+
+.dc-label {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    color: var(--die-label, #fff);
+    font: 700 18px Cinzel, serif;
+    line-height: 1;
+    text-shadow: 0 1px 3px #000;
+    pointer-events: none
+}
+
+.dc-label.long {
+    font-size: 14px
+}
+
+.dc-label.xlong {
+    font-size: 11px
+}
+
+.die-value>span {
+    z-index: 1;
+    text-shadow: 0 1px 3px #000
+}
+
+.at .v>span {
+    position: absolute;
+    inset: 3px;
+    display: grid;
+    place-items: center;
+    line-height: 1
 }
 
 .at button.s {
@@ -465,7 +557,7 @@ nav a.on {
 
 .sk {
     display: grid;
-    grid-template-columns: 1fr auto auto 64px;
+    grid-template-columns: minmax(80px, 1fr) 42px 14px 42px 54px;
     gap: 6px;
     align-items: center;
     background: var(--in2);
@@ -479,6 +571,27 @@ nav a.on {
     border-color: var(--ac)
 }
 
+.sk-name {
+    display: grid;
+    gap: 3px;
+    min-width: 0
+}
+
+.sk-name>span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap
+}
+
+.sk-name select.skill-detail {
+    width: 100%;
+    max-width: 140px;
+    min-width: 0;
+    height: 23px;
+    padding: 1px 3px;
+    font: 11px 'Crimson Pro', serif
+}
+
 .sk b {
     background: var(--ac);
     padding: 1px 6px;
@@ -489,6 +602,14 @@ nav a.on {
     font-style: normal;
     color: var(--ac2);
     font-size: 10px
+}
+
+.sk .dc-label {
+    font-size: 12px
+}
+
+.sk .dc-label.long {
+    font-size: 11px
 }
 
 .rels {
@@ -570,7 +691,35 @@ nav a.on {
 
 .box {
     height: 420px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden
+}
+
+.box-content {
+    flex: 1;
+    min-height: 0;
     overflow: auto
+}
+
+.box-notes .box-content {
+    overflow: hidden
+}
+
+.box-footer {
+    flex: none;
+    display: flex;
+    justify-content: center;
+    padding-top: 8px;
+    margin-top: 8px;
+    border-top: 1px solid var(--ln)
+}
+
+.box-footer button {
+    min-width: 42px;
+    min-height: 38px;
+    font-size: 20px;
+    line-height: 1
 }
 
 .it {
@@ -699,6 +848,11 @@ textarea.ot {
 }
 
 @media (max-width: 600px) {
+    .skl {
+        max-height: none;
+        overflow: visible
+    }
+
     #modal {
         z-index: 40;
         box-sizing: border-box;
@@ -879,9 +1033,9 @@ nav {
 }
 
 .ttl {
-    border: 0;
+    border: 0 !important;
     padding: 8px 0;
-    background: repeating-linear-gradient(90deg, var(--ac) 0 8px, transparent 8px 12px) top/100% 3px no-repeat, repeating-linear-gradient(90deg, var(--ac) 0 8px, transparent 8px 12px) bottom/100% 3px no-repeat
+    background: none !important
 }
 
 .prof,
@@ -923,8 +1077,17 @@ nav {
     }
 
     .sk {
-        grid-template-columns: 1fr auto auto 56px;
+        grid-template-columns: minmax(56px, 1fr) 38px 14px 38px 42px;
         gap: 4px
+    }
+
+    .die-pick,
+    .sk-attr {
+        width: 38px
+    }
+
+    .sk-name select.skill-detail {
+        font-size: 11px
     }
 
     .box {
@@ -974,6 +1137,16 @@ nav {
 }
 
 .dc {
+    position: relative;
+    display: inline-grid;
+    place-items: center;
+    width: 100%;
+    height: 100%;
+    vertical-align: middle
+}
+
+.dc-shape {
+    display: block;
     width: 100%;
     height: 100%
 }
@@ -1012,6 +1185,7 @@ nav {
 
 .dx .dc {
     width: 100%;
+    height: auto;
     aspect-ratio: 1
 }
 
@@ -1027,7 +1201,7 @@ nav {
     text-align: center
 }
 
-.dx span,
+.dx > span:not(.dc),
 .rdie small {
     display: inline-block;
     background: #262b33;
@@ -1171,7 +1345,9 @@ nav {
     inset: 0;
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
+    object-position: center center;
+    transform-origin: center center;
     max-width: none;
     pointer-events: none;
     user-select: none

@@ -92,11 +92,12 @@ export const CAT = {
   itens: [{ name: "Kit de primeiros socorros", description: "Estabiliza um aliado ferido." }, { name: "Lanterna", description: "Ilumina ambientes escuros." }, { name: "Cordas e ganchos", description: "Auxilia escaladas." }]
 };
 export const TABN = { hab: "Habilidades", equip: "Equipamentos", itens: "Itens", outros: "Outros" };
-export const blank = () => ({ name: "Novo Agente", perfil: "Executor", ocup: "", nivel: 1, mundo: "moderno", a: { f: 1, m: 1, e: 1 }, pv: 6, pvMax: 6, pd: 6, pdMax: 6, img: {}, crop: { z: 1, x: 0, y: 0 }, sk: {}, rel: [], hab: [], equip: [], itens: [], outros: "", campaign: null, obs: { useCampaign: true, layout: null } });
+export const blank = () => ({ name: "Novo Agente", perfil: "Executor", ocup: "", nivel: 1, mundo: "moderno", a: { f: 1, m: 1, e: 1 }, pv: 6, pvMax: 6, pd: 6, pdMax: 6, img: {}, crop: { z: 1, x: 0, y: 0 }, sk: {}, skillInfo: {}, rel: [], hab: [], equip: [], itens: [], outros: "", campaign: null, obs: { useCampaign: true, layout: null } });
 /* Completa campos que fichas antigas não têm e converte as perícias antigas (por índice) para o formato novo (por nome). */
 export function migrate(s) {
   const b = blank();
   s.a = { ...b.a, ...(s.a || {}) }; s.img = s.img || {}; s.rel = s.rel || []; s.mundo = SKILLS[s.mundo] ? s.mundo : 'moderno';
+  s.skillInfo = s.skillInfo || {};
   s.crop = { ...b.crop, ...(s.crop || {}) }; s.obs = { ...b.obs, ...(s.obs || {}) };
   for (const k of ['hab', 'equip', 'itens']) {
     s[k] = (Array.isArray(s[k]) ? s[k] : []).map(x => Array.isArray(x)
@@ -118,7 +119,12 @@ export const faceKey = s => {
 };
 export const face = s => { const k = faceKey(s); return k ? s.img[k] : '' };
 /* Todas as imagens de estado usam o MESMO enquadramento (s.crop). x e y são frações do tamanho do quadro. */
-export const cropCss = c => { c = c || {}; return `transform:translate(${+((c.x || 0) * 100).toFixed(3)}%,${+((c.y || 0) * 100).toFixed(3)}%) scale(${c.z || 1})` };
+export const cropCss = (c, w, h) => {
+  c = c || {};
+  const unit = w && h ? Math.min(w, h) : 1;
+  const x = (c.x || 0) * (w && h ? unit / w : 1), y = (c.y || 0) * (w && h ? unit / h : 1);
+  return `transform:translate(${+(x * 100).toFixed(3)}%,${+(y * 100).toFixed(3)}%) scale(${c.z || 1})`
+};
 export const picHTML = (src, c) => src ? `<img src="${esc(src)}" alt="" draggable=false style="${cropCss(c)}">` : '';
 export const toast = (m, bad) => { const t = $('#toast'); t.textContent = m; t.style.display = 'block'; clearTimeout(t._t); t._t = setTimeout(() => t.style.display = 'none', bad ? 6000 : 2000) };
 export const modal = h => { $('#modal').innerHTML = `<div class=mb>${h}</div>`; $('#modal').classList.add('on') };

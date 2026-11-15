@@ -52,7 +52,7 @@ async function deleteAccountData(uid) {
 }
 
 guard(u => {
-  let tab = location.hash.slice(1) || 'perfil', friends = [], friendRequests = { incoming: [], outgoing: [] };
+  let tab = location.hash.slice(1) || 'perfil', friends = [], friendRequests = { incoming: [], outgoing: [] }, pendingFriendRemoval = null;
   const themeCategoryOpen = { profiles: true, otherSide: true, special: true };
   if (tab === 'conta') { tab = 'perfil'; history.replaceState(null, '', '#perfil') }
   const pwd = u.providerData.some(p => p.providerId === 'password');
@@ -87,7 +87,10 @@ guard(u => {
       amigos: `<div class=pn><b class=cz>Solicitar amizade</b><div class=row><input id=fq placeholder="@usuario ou e-mail" style="flex:1 1 220px" autocapitalize=none><button data-a=addfr>Enviar solicitação</button></div><div class=row><button class=g data-a=mylink>Copiar meu link de amizade</button></div><p id=ms class=ok></p></div>
         <div class=pn><b class=cz>Solicitações recebidas (${friendRequests.incoming.length})</b>${friendRequests.incoming.map(r => `<div class=frow><span class=who>${avatar(r.fromProfile, 'sm')}<span class=mn><b>${esc(r.fromProfile?.displayName || 'Agente')}</b><small>@${esc(r.fromProfile?.username || '')}</small></span></span><span class=row><button data-a=acceptfr data-id="${esc(r.id)}" data-from="${esc(r.from)}">Aceitar</button><button class=g data-a=rejectfr data-id="${esc(r.id)}">Recusar</button></span></div>`).join('') || '<p class=hint>Nenhuma solicitação recebida.</p>'}</div>
         <div class=pn><b class=cz>Solicitações enviadas (${friendRequests.outgoing.length})</b>${friendRequests.outgoing.map(r => `<div class=frow><span class=who>${avatar(r.toProfile, 'sm')}<span class=mn><b>${esc(r.toProfile?.displayName || 'Agente')}</b><small>@${esc(r.toProfile?.username || '')}</small></span></span><button class=g data-a=cancelreq data-id="${esc(r.id)}" data-to="${esc(r.to)}">Cancelar</button></div>`).join('') || '<p class=hint>Nenhuma solicitação enviada.</p>'}</div>
-        <div class=pn><b class=cz>Meus amigos (${friends.length})</b>${friends.map(p => `<div class=frow><span class=who>${avatar(p, 'sm')}<span class=mn><b>${esc(p.displayName)}</b><small>@${esc(p.username)}</small></span></span><button class=g data-a=rmfr data-u="${esc(p.uid)}" aria-label="Remover ${esc(p.displayName)}">Remover</button></div>`).join('') || '<p class=hint>Você ainda não tem amigos adicionados.</p>'}</div>`
+        <div class=pn><b class=cz>Meus amigos (${friends.length})</b>${friends.map(p => {
+          const handle = '@' + (p.username || p.displayName || 'usuário');
+          return `<div class=frow><span class=who>${avatar(p, 'sm')}<span class=mn><b>${esc(p.displayName)}</b><small>${esc(handle)}</small></span></span><button class=g data-a=rmfr data-u="${esc(p.uid)}" aria-label="Remover ${esc(handle)} dos amigos">Remover ${esc(handle)}</button></div>`
+        }).join('') || '<p class=hint>Você ainda não tem amigos adicionados.</p>'}</div>`
     }; $('#pb').innerHTML = T[tab] || T.perfil
   };
   track(window, 'club-theme-unlocked', () => { if (tab === 'aparencia') draw() });
@@ -181,7 +184,20 @@ guard(u => {
     acceptfr: async t => { await answerFriendRequest({ id: t.dataset.id, from: t.dataset.from, to: u.uid }, u.uid, true); toast('Solicitação aceita; vocês agora são amigos.') },
     rejectfr: async t => { await answerFriendRequest({ id: t.dataset.id, to: u.uid }, u.uid, false); toast('Solicitação recusada.') },
     cancelreq: async t => { await answerFriendRequest({ id: t.dataset.id, from: u.uid, to: t.dataset.to }, u.uid, false); toast('Solicitação cancelada.') },
-    rmfr: async t => { if (confirm('Remover este amigo?')) await removeFriend(u.uid, t.dataset.u) },
+    rmfr: t => {
+      const friend = friends.find(p => p.uid === t.dataset.u);
+      if (!friend) throw new Error('Este usuário não está mais na sua lista de amigos.');
+      const handle = '@' + (friend.username || friend.displayName || 'usuário');
+      pendingFriendRemoval = { uid: friend.uid, handle };
+      modal(`<h3>Remover ${esc(handle)} dos amigos?</h3><p>Vocês deixarão de aparecer na lista de amigos um do outro.</p><div class=row><button class=danger data-a=confirmFriendRemoval>Remover amigo</button><button class=g data-a=cancelFriendRemoval>Cancelar</button></div>`)
+    },
+    confirmFriendRemoval: async () => {
+      const target = pendingFriendRemoval;
+      if (!target || !friends.some(friend => friend.uid === target.uid)) throw new Error('Este usuário não está mais na sua lista de amigos.');
+      await removeFriend(u.uid, target.uid);
+      pendingFriendRemoval = null; close(); toast(`${target.handle} removido dos amigos.`)
+    },
+    cancelFriendRemoval: () => { pendingFriendRemoval = null; close() },
     mylink: () => clip(new URL('perfil.html?add=' + u.uid, location.href).href, 'Link de amizade copiado')
   });
 });

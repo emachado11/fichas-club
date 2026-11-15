@@ -90,7 +90,7 @@ export const setPath = (o, p, v) => { const ks = p.split('.'), l = ks.pop(); ks.
 /* ---------- CSS dos efeitos ---------- */
 const CSS = `.pg{position:relative;pointer-events:none}.pg *{box-sizing:border-box}
 .pe{position:absolute}.fxw{position:absolute;inset:0}.pc{position:absolute;inset:0;overflow:hidden}
-.pc img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;max-width:none}
+.pc img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center center;transform-origin:center center;max-width:none}
 .pe .scan{position:absolute;inset:0;pointer-events:none}
 .pe .trk{position:absolute;inset:0}.pe .fl{position:absolute}
 .pe .tx{position:absolute;inset:0;display:flex;align-items:center;padding:0 .4em;white-space:nowrap;overflow:hidden}
@@ -152,7 +152,7 @@ export function createPortrait(root, opt = {}) {
     }
     function patch(prev) {
         if (!D) return; const e = L.el;
-        if (N.portrait) { const i = N.portrait.img; if (D.src) { if (i.getAttribute('src') !== D.src) i.src = D.src; i.style.cssText = cropCss(D.crop); i.hidden = false } else i.hidden = true }
+        if (N.portrait) { const i = N.portrait.img; if (D.src) { if (i.getAttribute('src') !== D.src) i.src = D.src; i.style.cssText = cropCss(D.crop, e.portrait.w, e.portrait.h); i.hidden = false } else i.hidden = true }
         if (N.name) { const m = [...String(D.name ?? '')], cut = m.length > e.name.maxc; N.name.tx.textContent = m.slice(0, e.name.maxc).join('') + (cut && e.name.ell ? '…' : '') }
         ['pv', 'pd'].forEach(k => {
             const n = N[k]; if (!n) return; const c = e[k], cur = +D[k] || 0, mx = +D[k + 'Max'] || 1, p = Math.max(0, Math.min(100, cur / mx * 100));

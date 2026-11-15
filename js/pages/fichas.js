@@ -1,4 +1,4 @@
-import { guard, page, act, $, err, toast } from '../common.js';
+import { guard, page, act, $, esc, err, toast } from '../common.js';
 import { db, collection, query, where, onSnapshot, deleteDoc, doc } from '../firebase.js';
 import { PRIV, savePriv } from '../profile.js';
 import { fab, sheetCard, skel } from '../ui.js';
@@ -29,7 +29,10 @@ guard(u => {
     const save = () => savePriv(u.uid, { fsort: st.sort, fdir: st.dir }).catch(() => { });
     const saveOrder = o => { order = o; savePriv(u.uid, { sheetOrder: o }).catch(x => toast(err(x), 1)); draw() };
     const move = (id, d) => { const v = view().map(x => x.id), i = v.indexOf(id), j = i + d; if (j < 0 || j >= v.length) return; const o = full(), a = o.indexOf(v[i]), b = o.indexOf(v[j]);[o[a], o[b]] = [o[b], o[a]]; saveOrder(o) };
-    onSnapshot(query(collection(db, 'sheets'), where('owner', '==', u.uid)), q => { all = q.docs.map(d => ({ id: d.id, ...d.data() })); draw() }, x => $('#gr').textContent = err(x));
+    onSnapshot(query(collection(db, 'sheets'), where('owner', '==', u.uid)), q => { all = q.docs.map(d => ({ id: d.id, ...d.data() })); draw() }, x => {
+        console.error('Falha ao listar fichas próprias', { uid: u.uid, code: x?.code, message: x?.message });
+        $('#gr').innerHTML = `<p class=er>Falha ao carregar fichas (${esc(x?.code || 'erro')}): ${esc(err(x))}</p>`
+    });
     $('#q').oninput = e => { st.q = e.target.value.trim().toLowerCase(); draw() };
     $('#so').onchange = e => { st.sort = e.target.value; st.dir = st.sort == 'lvl' ? -1 : 1; save(); draw() };
     const g = $('#gr');

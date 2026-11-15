@@ -90,15 +90,24 @@ async function boot(u) {
     }
     const sn = v => $('#snap').checked ? Math.round(v / +$('#gs').value) * +$('#gs').value : Math.round(v);
     const previewLayout = () => {
-        const layout = clone(L), name = layout.el.name;
-        const effects = name.fx;
-        const margin = Math.ceil(Math.max(24, name.size / 2,
-            effects.shadow.on ? Math.max(Math.abs(effects.shadow.x), Math.abs(effects.shadow.y)) + effects.shadow.blur * 2 : 0,
-            effects.glow.on ? effects.glow.blur * effects.glow.str * 2 : 0,
-            effects.chroma.on ? effects.chroma.off + 4 : 0,
-            effects.glitch.on ? effects.glitch.int + 4 : 0));
-        Object.entries(layout.el).forEach(([id, element]) => { element.on = id === 'name' });
-        name.x = margin; name.y = margin; layout.w = name.w + margin * 2; layout.h = name.h + margin * 2;
+        const layout = clone(L), visible = Object.values(layout.el).filter(element => element.on);
+        if (!visible.length) return layout;
+        const extra = element => Math.ceil(Math.max(12,
+            element.fx.shadow.on ? Math.max(Math.abs(element.fx.shadow.x), Math.abs(element.fx.shadow.y)) + element.fx.shadow.blur : 0,
+            element.fx.glow.on ? element.fx.glow.blur * element.fx.glow.str : 0,
+            element.fx.chroma.on ? element.fx.chroma.off + 2 : 0,
+            element.fx.glitch.on ? element.fx.glitch.int + 2 : 0));
+        const bounds = visible.map(element => {
+            const radians = element.rot * Math.PI / 180;
+            const w = Math.abs(element.w * Math.cos(radians)) + Math.abs(element.h * Math.sin(radians));
+            const h = Math.abs(element.h * Math.cos(radians)) + Math.abs(element.w * Math.sin(radians));
+            const pad = extra(element);
+            return { left: element.x + (element.w - w) / 2 - pad, top: element.y + (element.h - h) / 2 - pad, right: element.x + (element.w + w) / 2 + pad, bottom: element.y + (element.h + h) / 2 + pad }
+        });
+        const margin = 12, left = Math.min(...bounds.map(bound => bound.left)), top = Math.min(...bounds.map(bound => bound.top));
+        const right = Math.max(...bounds.map(bound => bound.right)), bottom = Math.max(...bounds.map(bound => bound.bottom));
+        Object.values(layout.el).forEach(element => { element.x = element.x - left + margin; element.y = element.y - top + margin });
+        layout.w = Math.ceil(right - left + margin * 2); layout.h = Math.ceil(bottom - top + margin * 2);
         return layout
     };
     function setMode(mode) {

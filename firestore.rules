@@ -1,5 +1,13 @@
 rules_version='2'; service cloud.firestore { match /databases/{d}/documents {
- match /sheets/{id} { allow get: if true; allow list: if request.auth!=null;
+ function campaignMember(id) {
+  return request.auth!=null &&
+   (get(/databases/$(d)/documents/campaigns/$(id)).data.master==request.auth.uid ||
+    request.auth.uid in get(/databases/$(d)/documents/campaigns/$(id)).data.members);
+ }
+ match /sheets/{id} { allow get: if true;
+  allow list: if request.auth!=null &&
+   (resource.data.owner==request.auth.uid ||
+    (resource.data.campaign is string && campaignMember(resource.data.campaign)));
   /* só dá para criar ficha em seu próprio nome; o dono não muda; só o dono apaga */
   allow create: if request.auth!=null && request.resource.data.owner==request.auth.uid;
   allow update: if request.auth!=null && request.resource.data.owner==resource.data.owner && (resource.data.owner==request.auth.uid ||
@@ -22,6 +30,21 @@ rules_version='2'; service cloud.firestore { match /databases/{d}/documents {
   allow read, write: if request.auth!=null &&
    (request.auth.uid in get(/databases/$(d)/documents/campaigns/$(id)).data.members ||
     get(/databases/$(d)/documents/campaigns/$(id)).data.master==request.auth.uid); }
+ match /campaigns/{id}/combats/{combatId} {
+  allow read: if campaignMember(id);
+  allow write: if request.auth!=null &&
+   get(/databases/$(d)/documents/campaigns/$(id)).data.master==request.auth.uid;
+ }
+ match /campaigns/{id}/combatDrafts/{draftId} {
+  allow read, write: if request.auth!=null &&
+   get(/databases/$(d)/documents/campaigns/$(id)).data.master==request.auth.uid;
+ }
+ match /campaigns/{id}/notes/{noteId} {
+  allow get: if campaignMember(id) &&
+   (noteId=='shared' || noteId=='personal-'+request.auth.uid);
+  allow create, update, delete: if campaignMember(id) &&
+   (noteId=='shared' || noteId=='personal-'+request.auth.uid);
+ }
  /* Layout base dos portraits de OBS (um por campanha). O OBS não faz login, então a leitura é pública; só o mestre grava. */
  match /layouts/{id} { allow get: if true;
   allow create, update, delete: if request.auth!=null && get(/databases/$(d)/documents/campaigns/$(id)).data.master==request.auth.uid; }

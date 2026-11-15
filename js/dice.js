@@ -2,14 +2,21 @@
 const D = [4, 6, 8, 10, 12, 20];
 const crit = (L) => L.some(([d, v]) => v === d) ? 'ok' : L.every(([, v]) => v === 1) ? 'fail' : ''; // ok = algum dado no máximo; fail = todos tiraram 1
 const IC = {
-  4: '<polygon points="30,6 54,50 6,50"/><path d="M30,6 30,36 6,50M30,36 54,50"/>',
-  6: '<polygon points="30,5 53,18 53,42 30,55 7,42 7,18"/><path d="M30,30 7,18M30,30 53,18M30,30 30,55"/>',
-  8: '<polygon points="30,4 54,30 30,56 6,30"/><path d="M6,30 54,30M30,4 30,56"/>',
-  10: '<polygon points="30,4 54,26 30,56 6,26"/><path d="M30,4 30,56M6,26 54,26"/>',
-  12: '<polygon points="30,5 55,23 46,53 14,53 5,23"/><polygon points="30,18 43,27 38,42 22,42 17,27"/>',
-  20: '<polygon points="30,4 54,17 54,43 30,56 6,43 6,17"/><polygon points="30,16 44,40 16,40"/><path d="M30,4 30,16M54,17 44,40M6,17 16,40"/>'
+  4: '<polygon points="30,4 57,55 3,55"/>',
+  6: '<rect x="7" y="7" width="46" height="46" rx="5"/>',
+  8: '<polygon points="30,4 56,30 30,56 4,30"/>',
+  10: '<polygon points="30,3 55,33 30,54 5,33"/>',
+  12: '<polygon points="30,4 55,22 45,54 15,54 5,22"/>',
+  20: '<polygon points="30,4 54,17 54,43 30,56 6,43 6,17"/>'
 };
-const svg = (d, t = '') => `<svg viewBox="0 0 60 60" class=dc fill=none stroke=currentColor stroke-width=2 stroke-linejoin=round aria-hidden=true>${IC[d]}${t !== '' ? `<text x=30 y=37 text-anchor=middle fill=currentColor stroke=none font-size=${String(t).length > 1 ? 15 : 18} font-family=Cinzel font-weight=700>${t}</text>` : ''}</svg>`;
+export const dieIcon = (d, t = '') => {
+  const shape = IC[d];
+  if (!shape) return '';
+  const label = String(t);
+  const size = label.length > 2 ? ' xlong' : label.length > 1 ? ' long' : '';
+  return `<span class="dc" aria-hidden="true"><svg viewBox="0 0 60 60" class="dc-shape" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round">${shape}</svg>${label ? `<span class="dc-label${size}">${label}</span>` : ''}</span>`
+};
+const svg = (d, t = '') => dieIcon(d, t);
 export function initDice() {
   if (document.getElementById('dice')) return;
   const w = document.createElement('div'); w.id = 'dice'; document.body.append(w);

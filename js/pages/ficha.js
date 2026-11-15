@@ -1,13 +1,13 @@
 import { track, guard, page, act, qs, $, clip, toast, blank, migrate, err, esc, modal } from '../common.js';
 import { db, doc, getDoc, onSnapshot, updateDoc, serverTimestamp } from '../firebase.js';
-import { mountSheet } from '../sheet.js';
+import { mountSheet } from '../sheet.js?v=6';
 const clone = o => JSON.parse(JSON.stringify(o));
 import { trackSheet } from '../profile.js';
 const id = qs('id'), demo = qs('demo');
 const SKIP = new Set(['updated', 'owner']);
 /* texto estável (ordena as chaves) para comparar valores */
 const st = v => JSON.stringify(v, (k, x) => x && typeof x === 'object' && !Array.isArray(x) ? Object.fromEntries(Object.entries(x).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0)) : x);
-let M, S;
+let M, S, readOnly = false;
 
 async function canAccessSheet(sheet, uid) {
     if (sheet.owner === uid) return true;
@@ -15,10 +15,17 @@ async function canAccessSheet(sheet, uid) {
     const campaign = await getDoc(doc(db, 'campaigns', sheet.campaign));
     return campaign.exists() && campaign.data().master === uid
 }
+async function canViewSheet(sheet, uid) {
+    if (sheet.owner === uid) return true;
+    if (!sheet.campaign) return false;
+    const campaign = await getDoc(doc(db, 'campaigns', sheet.campaign));
+    const data = campaign.exists() ? campaign.data() : null;
+    return !!data && (data.master === uid || (data.members || []).includes(uid))
+}
 
 async function start(u) {
     S = blank();
-    page(demo ? 'Ficha (demo, nada é salvo)' : 'Ficha', `<div class=row style="margin-bottom:10px;justify-content:flex-start"><a class="btn g" href="${demo ? 'index.html' : qs('c') ? 'campanha.html?id=' + qs('c') : 'fichas.html'}">← Voltar</a>${demo ? '' : '<button class=g data-a=obs>Copiar link do OBS</button><button class="g gear" data-a=obscfg title="Configurar portrait do OBS" aria-label="Configurar portrait do OBS">⚙</button><span id=sv class=mt></span>'}</div><div id=sh></div>`, u);
+    page(demo ? 'Ficha (demo, nada é salvo)' : 'Ficha', `<div class=row style="margin-bottom:10px;justify-content:flex-start"><a class="btn g" href="${demo ? 'index.html' : qs('c') ? 'campanha.html?id=' + qs('c') : 'fichas.html'}">← Voltar</a>${demo ? '' : '<button class="g gear" data-a=obscfg title="Configurar portrait do OBS" aria-label="Configurar portrait do OBS">⚙</button><span id=sv class=mt></span>'}</div><div id=sh></div>`, u);
     if (demo) { M = mountSheet($('#sh'), S, {}); return }
 
     const ref = doc(db, 'sheets', id), server = {};   // server[k] = último valor conhecido no servidor (texto estável)
@@ -42,16 +49,19 @@ async function start(u) {
             if (checkingAccess) return;
             checkingAccess = true;
             try {
-                if (!await canAccessSheet(d, u.uid)) {
+                const editable = await canAccessSheet(d, u.uid);
+                const readable = editable || (qs('ro') === '1' && await canViewSheet(d, u.uid));
+                if (!readable) {
                     dead = true; first = false; checkingAccess = false;
                     page('Ficha', '<p class=er>Você não tem permissão para acessar esta ficha.</p>', u); ok(); return
                 }
+                readOnly = !editable;
             } catch (x) {
                 dead = true; first = false; checkingAccess = false; no(x); return
             }
             checkingAccess = false;
             Object.assign(S, blank(), d); migrate(S);
-            if (d.owner === u.uid) trackSheet(u.uid, id);
+            if (d.owner === u.uid && !readOnly) trackSheet(u.uid, id);
             for (const k of Object.keys(d)) if (!SKIP.has(k)) server[k] = st(d[k]);
             first = false; ok(); return
         }
@@ -63,7 +73,7 @@ async function start(u) {
         if (changed) { migrate(S); M?.refresh() }
     }, x => { if (first) { first = false; no(x) } else toast(err(x), 1) }));
     if (dead) return;
-    M = mountSheet($('#sh'), S, { onSave: queue });
+    M = mountSheet($('#sh'), S, { onSave: queue, ro: readOnly });
     track(window, 'pagehide', flush); track(document, 'visibilitychange', () => document.hidden && flush());
     window.flushSheet = flush
 }

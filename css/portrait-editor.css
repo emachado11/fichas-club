@@ -12,12 +12,24 @@ body.pe-body #app {
 
 .pe-top {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  scrollbar-width: thin;
   align-items: center;
   gap: 8px 12px;
   padding: 8px 12px;
   background: var(--pn);
   border-bottom: 1px solid var(--ln)
+}
+
+.pe-top>* {
+  flex: 0 0 auto
+}
+
+.pe-top .pe-sp {
+  flex: 1 0 24px
 }
 
 .pe-title {
@@ -328,7 +340,10 @@ body.pe-body #app {
 
 .pe-top button,
 .pe-top .btn {
-  padding: .3em .7em
+  flex: 0 0 auto;
+  min-height: 36px;
+  padding: .3em .7em;
+  white-space: nowrap
 }
 
 .pe-mode {
