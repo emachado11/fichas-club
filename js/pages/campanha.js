@@ -1,6 +1,6 @@
 import { track, guard, page, act, qs, $, esc, clip, err, modal, close, face, cropCss, load, rd, shrink, jpg, toast } from '../common.js?v=10';
 import { db, doc, collection, query, where, onSnapshot, getDoc, getDocs, updateDoc, setDoc, addDoc, deleteDoc, serverTimestamp, arrayRemove, deleteField, writeBatch } from '../firebase.js';
-import { getProfile, findUser, sendInvite, sendFriendRequest, removeFriend, watchFriends, trackCampaign, avatar } from '../profile.js?v=3';
+import { getProfile, findUser, sendInvite, sendFriendRequest, removeFriend, watchFriends, trackCampaign, avatar } from '../profile.js?v=4';
 import { pickImage, openCropper } from '../cropper.js?v=2';
 const id = qs('id'); let U;
 

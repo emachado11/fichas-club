@@ -14,16 +14,17 @@ export const ENTITY_ACHIEVEMENT_ID = 'entity-fear';
 export const FAROL_THEME_UNLOCK_KEY = 'club-farol-theme-unlocked';
 export const FAROL_ACHIEVEMENT_ID = 'farol-reunion';
 export const PALETTES = { executor: 'Executor', analista: 'Analista', vigilante: 'Vigilante', conhecimento: 'Conhecimento', morte: 'Morte', sangue: 'Sangue', energia: 'Energia', medo: 'Medo', conchas: 'Conchas', halloween25: 'Halloween 25', entidade: 'Entidade do Medo', farol: 'Farol' };
-export const isEntityThemeUnlocked = () => {
-  if (PRIV.entityThemeUnlocked === true || (Array.isArray(PRIV.achievements) && PRIV.achievements.includes(ENTITY_ACHIEVEMENT_ID))) return true;
-  try { return localStorage.getItem(ENTITY_THEME_UNLOCK_KEY) === 'true' } catch { return false }
-};
-export const isFarolThemeUnlocked = () => {
-  if (PRIV.farolThemeUnlocked === true || (Array.isArray(PRIV.achievements) && PRIV.achievements.includes(FAROL_ACHIEVEMENT_ID))) return true;
-  try { return localStorage.getItem(FAROL_THEME_UNLOCK_KEY) === 'true' } catch { return false }
-};
+/* O desbloqueio vale por CONTA: vem do perfil salvo (users/{uid}) e, neste aparelho, de uma marca guardada com o uid.
+   (Antes a marca era única por navegador: quem desbloqueou com uma conta liberava o tema para todas as outras.) */
+const unlockKey = (key, uid) => uid && uid !== '1' ? `${key}-${uid}` : null;
+const currentUid = () => { try { return ME?.uid || localStorage.getItem('club-in') } catch { return ME?.uid || null } };
+const localUnlocked = key => { const k = unlockKey(key, currentUid()); if (!k) return false; try { return localStorage.getItem(k) === 'true' } catch { return false } };
+const saveLocalUnlock = (key, uid) => { const k = unlockKey(key, uid || ME?.uid); if (k) localStorage.setItem(k, 'true') };
+export const isEntityThemeUnlocked = () => PRIV.entityThemeUnlocked === true || (Array.isArray(PRIV.achievements) && PRIV.achievements.includes(ENTITY_ACHIEVEMENT_ID)) || localUnlocked(ENTITY_THEME_UNLOCK_KEY);
+export const isFarolThemeUnlocked = () => PRIV.farolThemeUnlocked === true || (Array.isArray(PRIV.achievements) && PRIV.achievements.includes(FAROL_ACHIEVEMENT_ID)) || localUnlocked(FAROL_THEME_UNLOCK_KEY);
+const isPaletteLocked = p => (p === 'entidade' && !isEntityThemeUnlocked()) || (p === 'farol' && !isFarolThemeUnlocked());
 export const applyTheme = t => { t = MODES[t] ? t : 'dark'; document.documentElement.dataset.theme = t; try { localStorage.theme = t } catch { } };
-export const applyPalette = p => { p = PALETTES[p] ? p : 'executor'; document.documentElement.dataset.palette = p; try { localStorage.palette = p } catch { } };
+export const applyPalette = p => { p = PALETTES[p] && !isPaletteLocked(p) ? p : 'executor'; document.documentElement.dataset.palette = p; try { localStorage.palette = p } catch { } };
 
 /* Garante que o usuário tenha perfil (cria @ automático na primeira vez) e carrega as preferências privadas.
    Se já houver uma cópia salva neste aparelho, a página abre imediatamente e os dados são atualizados em segundo plano. */
@@ -46,9 +47,17 @@ function applyPrefs(u) {
     if (PRIV.theme !== localPrefs.theme) syncPrefs.theme = localPrefs.theme
   } else if (PRIV.theme) applyTheme(PRIV.theme);
   if (PALETTES[localPrefs.palette]) {
-    applyPalette(localPrefs.palette);
-    if (PRIV.palette !== localPrefs.palette) syncPrefs.palette = localPrefs.palette
+    if (isPaletteLocked(localPrefs.palette)) document.documentElement.dataset.palette = 'executor';   // tema ainda não desbloqueado nesta conta: não aparece (a escolha salva não é apagada)
+    else {
+      applyPalette(localPrefs.palette);
+      if (PRIV.palette !== localPrefs.palette) syncPrefs.palette = localPrefs.palette
+    }
   } else if (PRIV.palette) applyPalette(PRIV.palette);
+  /* Deixa a marca deste aparelho em dia com o perfil da conta (usada pelo theme.js antes de a página aparecer). */
+  try {
+    if (PRIV.entityThemeUnlocked === true || (Array.isArray(PRIV.achievements) && PRIV.achievements.includes(ENTITY_ACHIEVEMENT_ID))) saveLocalUnlock(ENTITY_THEME_UNLOCK_KEY, u.uid);
+    if (PRIV.farolThemeUnlocked === true || (Array.isArray(PRIV.achievements) && PRIV.achievements.includes(FAROL_ACHIEVEMENT_ID))) saveLocalUnlock(FAROL_THEME_UNLOCK_KEY, u.uid)
+  } catch { }
   if (Object.keys(syncPrefs).length) savePriv(u.uid, syncPrefs).catch(() => { })
 }
 async function loadProfile(u) {
@@ -81,7 +90,7 @@ export async function getProfile(uid) {
 /* Preferências e atalhos privados do usuário (tema, idioma, recentes, ordem das fichas) */
 export const savePriv = async (uid, patch) => { Object.assign(PRIV, patch); await setDoc(doc(db, 'users', uid), patch, { merge: true }) };
 export function unlockEntityTheme(uid) {
-  try { localStorage.setItem(ENTITY_THEME_UNLOCK_KEY, 'true') }
+  try { saveLocalUnlock(ENTITY_THEME_UNLOCK_KEY, uid) }
   catch (error) { console.warn('Não foi possível salvar o desbloqueio do tema Entidade do Medo.', error) }
   PRIV.entityThemeUnlocked = true;
   PRIV.achievements = [...new Set([...(Array.isArray(PRIV.achievements) ? PRIV.achievements : []), ENTITY_ACHIEVEMENT_ID])];
@@ -93,7 +102,7 @@ export function unlockEntityTheme(uid) {
   return saving
 }
 export function unlockFarolTheme(uid) {
-  try { localStorage.setItem(FAROL_THEME_UNLOCK_KEY, 'true') }
+  try { saveLocalUnlock(FAROL_THEME_UNLOCK_KEY, uid) }
   catch (error) { console.warn('Não foi possível salvar o desbloqueio do tema Farol.', error) }
   PRIV.farolThemeUnlocked = true;
   PRIV.achievements = [...new Set([...(Array.isArray(PRIV.achievements) ? PRIV.achievements : []), FAROL_ACHIEVEMENT_ID])];

@@ -1,6 +1,6 @@
 import { guard, page, act, $, esc, err, toast } from '../common.js?v=10';
 import { db, collection, query, where, onSnapshot, deleteDoc, doc } from '../firebase.js';
-import { PRIV, savePriv } from '../profile.js?v=3';
+import { PRIV, savePriv } from '../profile.js?v=4';
 import { fab, sheetCard, skel } from '../ui.js?v=2';
 
 const SORTS = { az: 'Ordem alfabética', lvl: 'Nível', perfil: 'Perfil', recent: 'Mais recentes', mine: 'Minha ordem' };

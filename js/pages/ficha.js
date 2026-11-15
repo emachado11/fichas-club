@@ -2,7 +2,7 @@ import { track, guard, page, act, qs, $, clip, toast, blank, migrate, err, esc, 
 import { db, doc, getDoc, onSnapshot, updateDoc, serverTimestamp } from '../firebase.js';
 import { mountSheet } from '../sheet.js?v=9';
 const clone = o => JSON.parse(JSON.stringify(o));
-import { trackSheet } from '../profile.js?v=3';
+import { trackSheet } from '../profile.js?v=4';
 const id = qs('id'), demo = qs('demo');
 const SKIP = new Set(['updated', 'owner']);
 /* texto estável (ordena as chaves) para comparar valores */

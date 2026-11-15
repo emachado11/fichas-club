@@ -1,5 +1,5 @@
 /* Cabeçalho do site: logo, navegação, amigos, convites e perfil. */
-import { ME, setMe, avatar, isFarolThemeUnlocked, unlockEntityTheme, unlockFarolTheme, watchFriends, watchFriendRequests, watchInvites, answerFriendRequest, answerInvite } from './profile.js?v=3';
+import { ME, setMe, avatar, isFarolThemeUnlocked, unlockEntityTheme, unlockFarolTheme, watchFriends, watchFriendRequests, watchInvites, answerFriendRequest, answerInvite } from './profile.js?v=4';
 import { esc, toast, err } from './common.js?v=10';
 import { scope } from './firebase.js';
 import { watchBrowserNotifications } from './browser-notifications.js?v=2';

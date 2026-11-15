@@ -1,7 +1,7 @@
 /* Perfil: foto, nomes, @usuário, aparência, conta e amigos */
 import { track, guard, page, act, $, esc, toast, err, clip, modal, close } from '../common.js?v=10';
 import { auth, db, doc, writeBatch, getDoc, getDocs, collection, query, where, deleteField, arrayRemove, updatePassword, verifyBeforeUpdateEmail, reauthenticateWithCredential, reauthenticateWithPopup, deleteUser, GoogleAuthProvider, EmailAuthProvider, sendPasswordResetEmail } from '../firebase.js';
-import { ME, setMe, savePriv, applyTheme, applyPalette, MODES, PALETTES, isEntityThemeUnlocked, isFarolThemeUnlocked, clean, validHandle, findUser, sendFriendRequest, answerFriendRequest, removeFriend, watchFriends, watchFriendRequests, avatar, getProfile } from '../profile.js?v=3';
+import { ME, setMe, savePriv, applyTheme, applyPalette, MODES, PALETTES, isEntityThemeUnlocked, isFarolThemeUnlocked, clean, validHandle, findUser, sendFriendRequest, answerFriendRequest, removeFriend, watchFriends, watchFriendRequests, avatar, getProfile } from '../profile.js?v=4';
 import { pickImage, openCropper } from '../cropper.js?v=2';
 import { refreshAvatar } from '../header.js?v=4';
 
