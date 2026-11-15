@@ -463,6 +463,11 @@ nav a.on {
     --die-edge: color-mix(in srgb, var(--in) 70%, transparent);
 }
 
+.sheet .die-value .dc,
+.sheet .sk .dc {
+    color: color-mix(in srgb, var(--ac2) var(--die-tone), var(--ac))
+}
+
 .at .dc-label {
     font-size: 30px
 }

@@ -2336,7 +2336,10 @@ input[type=search] {
   }
 
   #bnav a.on {
-    color: var(--ac2)
+    color: var(--ac2);
+    background: var(--gb);
+    border-radius: 8px;
+    margin: 4px
   }
 
   .wrap {
