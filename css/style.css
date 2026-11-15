@@ -845,7 +845,8 @@ textarea.ot {
 @media (max-width: 600px) {
     .skl {
         max-height: none;
-        overflow: visible
+        overflow-y: auto;
+        overscroll-behavior: contain
     }
 
     #modal {

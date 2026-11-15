@@ -41,14 +41,16 @@ guard(u => {
     };
     const contextItems = target => {
         const participant = target.closest('[data-player-context]');
-        if (participant && c?.master === u.uid) {
+        if (participant) {
             const playerUid = participant.dataset.playerContext, person = people.find(p => p.uid === playerUid);
+            if (playerUid === u.uid || !(c?.members || []).includes(playerUid)) return null;
             const isFriend = friends.some(friend => friend.uid === playerUid);
             const handle = '@' + (person?.username || person?.displayName || 'jogador');
-            return [
-                { action: 'friend', label: isFriend ? `Remover ${handle} dos amigos` : `Adicionar ${handle} como amigo`, data: { u: playerUid, n: handle } },
-                { action: 'kick', label: 'Remover jogador da campanha', data: { u: playerUid, n: person?.displayName || 'jogador' } }
-            ]
+            const items = [
+                { action: 'friend', label: isFriend ? `Remover ${handle} dos amigos` : `Adicionar ${handle} como amigo`, data: { u: playerUid, n: handle } }
+            ];
+            if (c.master === u.uid) items.push({ action: 'kick', label: 'Remover jogador da campanha', data: { u: playerUid, n: person?.displayName || 'jogador' } });
+            return items
         }
         const card = target.closest('[data-sheet-context]');
         if (!card) return null;
@@ -128,7 +130,7 @@ guard(u => {
                     : `<div class="sc campaign-sheet-locked" data-p="${esc(x.perfil)}" data-id="${esc(x.id)}" data-sheet-context aria-disabled=true title="Você não pode abrir a ficha de outro jogador.">${card}</div>`}
   </div>`
         }).join('') || '<p class=mt style="grid-column:1/-1">Nenhuma ficha vinculada.</p>'}</div></div>
-  <div class=pn style="margin-top:12px"><h3>Participantes</h3><div class="row mem">${people.map(p => `<span class=row style="gap:6px" ${m && p.uid !== c.master ? `data-player-context="${esc(p.uid)}"` : ''}>${avatar(p, 'sm')}<span class=mn><b>${esc(p.displayName)}</b><small>@${esc(p.username)}${p.uid == c.master ? ' · mestre' : ''}</small></span></span>`).join('')}</div></div>
+  <div class=pn style="margin-top:12px"><h3>Participantes</h3><div class="row mem">${people.map(p => `<span class=row style="gap:6px" ${p.uid !== u.uid ? `data-player-context="${esc(p.uid)}"` : ''}>${avatar(p, 'sm')}<span class=mn><b>${esc(p.displayName)}</b><small>@${esc(p.username)}${p.uid == c.master ? ' · mestre' : ''}</small></span></span>`).join('')}</div></div>
   ${m ? `<div class=pn style="margin-top:12px;display:grid;gap:10px"><h3>Convidar</h3>
    <div class=row style="justify-content:flex-start"><input id=iq placeholder="@usuario ou e-mail" style="flex:1 1 220px"><button data-a=sendinv>Enviar convite</button></div>
    ${friends.length ? `<div><b class=mt>Amigos</b>${friends.map(p => `<div class=frow><span class=who>${avatar(p, 'sm')}<span class=mn><b>${esc(p.displayName)}</b><small>@${esc(p.username)}</small></span></span>${mem.has(p.uid) ? '<small>Já na campanha</small>' : sentTo.has(p.uid) ? '<small>Convite enviado</small>' : `<button class=g data-a=invfr data-u="${esc(p.uid)}">Convidar</button>`}</div>`).join('')}</div>` : '<p class=hint>Adicione amigos em Perfil › Amigos para convidá-los com um toque.</p>'}
@@ -221,10 +223,11 @@ guard(u => {
         c = d.data();
         if (!c) { $('#ct').innerHTML = '<p class=er>Campanha não encontrada.</p>'; return }
         watchFeatures(); watchCombat(); watchDraft();
-        if (c.master === u.uid && !mstarted) { mstarted = true; startMaster() }   // amigos e convites só interessam ao mestre
+        if (c.master === u.uid && !mstarted) { mstarted = true; startMaster() }
         schedule(); who()
     }, x => $('#ct').innerHTML = `<p class=er>${err(x)}</p>`);
     onSnapshot(query(collection(db, 'sheets'), where('campaign', '==', id)), q => { L = q.docs.map(d => ({ id: d.id, ...d.data() })); schedule() });
+    watchFriends(u.uid, f => { friends = f; schedule() });
     $('#ct').addEventListener('contextmenu', e => {
         const target = e.target.closest('[data-player-context], [data-sheet-context]');
         if (contextHold && target === contextHold.target) {
@@ -241,7 +244,6 @@ guard(u => {
         noteTimers[key] = setTimeout(() => setDoc(doc(db, 'campaigns', id, 'notes', key), { text: t.value, updated: serverTimestamp() }).catch(x => toast(err(x), 1)), 350)
     });
     const startMaster = () => {
-        watchFriends(u.uid, f => { friends = f; schedule() });
         onSnapshot(query(collection(db, 'invites'), where('campaign', '==', id), where('from', '==', u.uid)), async q => { sent = await Promise.all(q.docs.map(async d => { const x = d.data(), p = await getProfile(x.to); return { ...x, id: d.id, toName: p.username } })); schedule() }, () => { });
     };
     const invite = async p => {
@@ -308,7 +310,7 @@ guard(u => {
         cancelCampaignEdit: () => { campaignEdit = null; close() },
         friend: async t => {
             closeContextMenu();
-            if (c.master !== u.uid || t.dataset.u === u.uid || !(c.members || []).includes(t.dataset.u)) throw new Error('Ação disponível apenas para outro participante da campanha.');
+            if (t.dataset.u === u.uid || !(c.members || []).includes(u.uid) || !(c.members || []).includes(t.dataset.u)) throw new Error('Ação disponível apenas entre participantes da campanha.');
             if (friends.some(friend => friend.uid === t.dataset.u)) {
                 pendingFriendRemoval = { uid: t.dataset.u, handle: t.dataset.n || 'este usuário' };
                 modal(`<h3>Remover ${esc(pendingFriendRemoval.handle)} dos amigos?</h3><p>Vocês deixarão de aparecer na lista de amigos um do outro.</p><div class=row><button class=danger data-a=confirmFriendRemoval>Remover amigo</button><button class=g data-a=cancelFriendRemoval>Cancelar</button></div>`)
@@ -319,7 +321,7 @@ guard(u => {
         },
         confirmFriendRemoval: async () => {
             const target = pendingFriendRemoval;
-            if (!target || c.master !== u.uid || !(c.members || []).includes(target.uid) || !friends.some(friend => friend.uid === target.uid)) throw new Error('Este usuário não está mais disponível para remoção.');
+            if (!target || !(c.members || []).includes(u.uid) || !(c.members || []).includes(target.uid) || !friends.some(friend => friend.uid === target.uid)) throw new Error('Este usuário não está mais disponível para remoção.');
             await removeFriend(u.uid, target.uid);
             pendingFriendRemoval = null; close(); toast(`${target.handle} removido dos amigos.`)
         },
