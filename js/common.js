@@ -1,6 +1,6 @@
 import { auth, onAuthStateChanged, signOut, scope } from './firebase.js';
 import { ensureProfile } from './profile.js?v=3';
-import { mountHeader, earlyHeader, syncNav } from './header.js?v=3';
+import { mountHeader, earlyHeader, syncNav } from './header.js?v=4';
 /* Listeners da página atual: são removidos ao trocar de página sem recarregar. */
 const _off = [];
 export const track = (t, type, fn, o) => { t.addEventListener(type, fn, o); _off.push(() => t.removeEventListener(type, fn, o)) };

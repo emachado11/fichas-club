@@ -14,7 +14,7 @@ const IC = {
 const PAGES = { home: ['painel'], sheet: ['fichas', 'ficha', 'ficha-nova'], camp: ['campanhas', 'campanha', 'campanha-nova', 'convite'] };
 const isOn = k => PAGES[k].includes(location.pathname.split('/').pop().replace('.html', ''));
 const NAV = [['painel.html', 'Início', 'home'], ['fichas.html', 'Fichas', 'sheet'], ['campanhas.html', 'Campanhas', 'camp']];
-let mounted = null, unsubs = [];
+let mounted = null, unsubs = [], menusBound = false;
 let logoEventActive = false;
 let typedFarolCode = '';
 const FAROL_CODE = 'smil3';
@@ -65,6 +65,13 @@ function recordLogoEvent(id) {
   showAchievement('?', 'A Entidade do Medo reina')
 }
 
+function unlockFarol() {
+  if (isFarolThemeUnlocked()) return;
+  unlockFarolTheme(ME?.uid).catch(error => console.warn('Não foi possível sincronizar o desbloqueio do tema Farol.', error));
+  showAchievement(':)', 'Nos veremos novamente. :)')
+}
+
+/* Computador: digitar o código fora de campos de texto (teclado físico). */
 addEventListener('keydown', event => {
   const target = event.target;
   const typing = target?.isContentEditable || target?.closest?.('input, textarea, select, [contenteditable]:not([contenteditable="false"])');
@@ -77,10 +84,26 @@ addEventListener('keydown', event => {
   typedFarolCode = (typedFarolCode + key).slice(-FAROL_CODE.length);
   if (typedFarolCode !== FAROL_CODE) return;
   typedFarolCode = '';
-  if (isFarolThemeUnlocked()) return;
-  unlockFarolTheme(ME?.uid).catch(error => console.warn('Não foi possível sincronizar o desbloqueio do tema Farol.', error));
-  showAchievement(':)', 'Nos veremos novamente. :)')
+  unlockFarol()
 });
+
+/* Celular (tela de toque): o teclado virtual não envia teclas como o do computador, e quase sempre há um campo
+   de texto em foco. Aqui o código vale quando digitado em qualquer campo de escrita (confere o fim do texto digitado). */
+const isTouchScreen = () => matchMedia('(pointer: coarse)').matches;
+addEventListener('input', event => {
+  if (!event.inputType?.startsWith('insert') || event.inputType === 'insertFromPaste' || !isTouchScreen()) return;
+  const field = event.target;
+  if (!field || field.type === 'password') return;
+  const n = FAROL_CODE.length;
+  let tail;
+  if (field.isContentEditable) tail = (field.textContent || '').slice(-n);
+  else if (typeof field.value === 'string') {
+    let end = field.value.length;
+    try { if (field.selectionStart != null) end = field.selectionStart } catch { }
+    tail = field.value.slice(Math.max(0, end - n), end)
+  } else return;
+  if (tail.toLowerCase() === FAROL_CODE) unlockFarol()
+}, true);
 
 function showJumpscare(src, eventId) {
   const overlay = document.createElement('div'), image = document.createElement('img');
@@ -137,10 +160,11 @@ export function mountHeader(u, opt = {}) {
   if (!h) { h = document.createElement('header'); h.id = 'hdr'; document.getElementById('app').before(h) }
   if (mounted === u?.uid && h.firstChild) return; mounted = opt.shell ? null : u?.uid; unsubs.forEach(f => f()); unsubs = [];
   let bn = document.getElementById('bnav'); if (!bn) { bn = document.createElement('nav'); bn.id = 'bnav'; document.body.append(bn) }
-  bn.innerHTML = NAV.map(([href, t, k]) => `<a href=${href} class="${isOn(k) ? 'on' : ''}">${IC[k]}<span>${t}</span></a>`).join('');
+  const links = NAV.map(([href, t, k]) => `<a href=${href} class="${isOn(k) ? 'on' : ''}">${IC[k]}<span>${t}</span></a>`).join('');
+  bn.innerHTML = links;
   h.innerHTML = `<div class=hin>
   <a class=logo href="#" aria-label="The Club | Eventos aleatórios"><img src="img/logo.png" alt="The Club"></a>
-  <nav class=hnav>${NAV.map(([href, t, k]) => `<a href=${href} class="${isOn(k) ? 'on' : ''}">${IC[k]}<span>${t}</span></a>`).join('')}</nav>
+  <nav class=hnav>${links}</nav>
   <div class=hact>${!u ? '<a class=btn href=index.html>Entrar</a>' : ''}
     ${!u ? '<template>' : ''}<div class=hd data-h=fr><button class=ib data-hd=fr aria-label="Amigos" aria-expanded=false>${IC.friends}<span class=act-label>Amigos</span></button><div class=menu role=menu><h4>Amigos</h4><div class=ml id=hfriends><p class=mt>Carregando…</p></div><h4 class=mt>Pedidos</h4><div class=ml id=hrequests><p class=mt>Carregando…</p></div><a class=mf href="perfil.html#amigos">Gerenciar amigos</a></div></div>
     <div class=hd data-h=inv><button class=ib data-hd=inv aria-label="Convites" aria-expanded=false>${IC.mail}<span class=act-label>Convites</span><i class=badge id=hbd hidden></i></button><div class=menu role=menu><h4>Convites para campanhas</h4><div class=ml id=hinv><p class=mt>Carregando…</p></div></div></div>
@@ -154,8 +178,12 @@ export function mountHeader(u, opt = {}) {
     const a = e.target.closest('[data-inv]'); if (a) answer(a, u);
     const r = e.target.closest('[data-fr]'); if (r) answerFriend(r, u)
   };
-  document.addEventListener('click', e => { if (!e.target.closest('#hdr .hd')) h.querySelectorAll('.hd.open').forEach(x => x.classList.remove('open')) });
-  addEventListener('keydown', e => { if (e.key === 'Escape') h.querySelectorAll('.hd.open').forEach(x => x.classList.remove('open')) });
+  if (!menusBound) {
+    menusBound = true;
+    const closeMenus = () => document.querySelectorAll('#hdr .hd.open').forEach(x => x.classList.remove('open'));
+    document.addEventListener('click', e => { if (!e.target.closest('#hdr .hd')) closeMenus() });
+    addEventListener('keydown', e => { if (e.key === 'Escape') closeMenus() })
+  }
   if (!u || opt.shell) return;
   let fstarted = false;
   const startFriends = () => { if (fstarted) return; fstarted = true; scope.global = true;

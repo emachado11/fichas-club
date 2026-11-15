@@ -3,7 +3,7 @@ import { track, guard, page, act, $, esc, toast, err, clip, modal, close } from 
 import { auth, db, doc, writeBatch, getDoc, getDocs, collection, query, where, deleteField, arrayRemove, updatePassword, verifyBeforeUpdateEmail, reauthenticateWithCredential, reauthenticateWithPopup, deleteUser, GoogleAuthProvider, EmailAuthProvider, sendPasswordResetEmail } from '../firebase.js';
 import { ME, setMe, savePriv, applyTheme, applyPalette, MODES, PALETTES, isEntityThemeUnlocked, isFarolThemeUnlocked, clean, validHandle, findUser, sendFriendRequest, answerFriendRequest, removeFriend, watchFriends, watchFriendRequests, avatar, getProfile } from '../profile.js?v=3';
 import { pickImage, openCropper } from '../cropper.js?v=2';
-import { refreshAvatar } from '../header.js?v=3';
+import { refreshAvatar } from '../header.js?v=4';
 
 async function commitBatches(operations) {
   for (let i = 0; i < operations.length; i += 450) {
