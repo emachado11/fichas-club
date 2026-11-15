@@ -2462,6 +2462,17 @@ html { -webkit-text-size-adjust: 100% }
   .dd > button { min-height: 34px }
   .tabs button, .mundo button { min-height: 40px }
   .it button { min-width: 36px; min-height: 36px }
+  .sk .die-pick { min-width: 0 }
+  .sk .die-pick select {
+    min-width: 0;
+    max-width: 100%;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: transparent;
+    opacity: 0
+  }
 }
 @media (max-width: 760px) { #dbtn { width: 42px; height: 42px; padding: 5px } }
 /* Sem desfoque nos painéis da ficha em telas pequenas (rolagem mais leve) */

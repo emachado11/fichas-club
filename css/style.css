@@ -458,9 +458,17 @@ nav a.on {
     inset: 3px;
     width: calc(100% - 6px);
     height: calc(100% - 6px);
-    z-index: -1;
+    z-index: 0;
     color: var(--ac2);
     --die-edge: color-mix(in srgb, var(--in) 70%, transparent);
+}
+
+.at .dc-label {
+    font-size: 30px
+}
+
+.at .dc-label.long {
+    font-size: 24px
 }
 
 .dc-label {
@@ -481,19 +489,6 @@ nav a.on {
 
 .dc-label.xlong {
     font-size: 11px
-}
-
-.die-value>span {
-    z-index: 1;
-    text-shadow: 0 1px 3px #000
-}
-
-.at .v>span {
-    position: absolute;
-    inset: 3px;
-    display: grid;
-    place-items: center;
-    line-height: 1
 }
 
 .at button.s {
@@ -1077,7 +1072,7 @@ nav {
     }
 
     .sk {
-        grid-template-columns: minmax(56px, 1fr) 38px 14px 38px 42px;
+        grid-template-columns: minmax(0, 1fr) 38px 14px 38px 42px;
         gap: 4px
     }
 
