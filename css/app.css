@@ -2524,3 +2524,11 @@ html { -webkit-text-size-adjust: 100% }
 @media (prefers-reduced-motion: reduce) { @view-transition { navigation: none } }
 .cont { display: grid; gap: 8px; padding-top: 10px; border-top: 1px solid var(--ln) }
 .cont[hidden] { display: none }
+
+/* Celular: Farol e Halloween 25 mostram o lado esquerdo do vídeo (em tela estreita o vídeo já é cortado dos lados; aqui o corte parte da esquerda, não do centro). */
+@media (pointer: coarse) and (max-width: 900px) {
+  html[data-palette=farol] #special-theme-background,
+  html[data-palette=halloween25] #special-theme-background {
+    object-position: left center
+  }
+}
