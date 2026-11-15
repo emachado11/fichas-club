@@ -1,5 +1,5 @@
 import { collection, db, onSnapshot, query, where } from './firebase.js';
-import { getProfile } from './profile.js';
+import { getProfile } from './profile.js?v=3';
 
 function wasRecentlyNotified(uid, key) {
     const storageKey = `club-notified-${uid}`;

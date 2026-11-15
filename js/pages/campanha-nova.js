@@ -1,6 +1,6 @@
-import { guard, page, act, $, err, load, jpg } from '../common.js';
+import { guard, page, act, $, err, load, jpg } from '../common.js?v=10';
 import { db, addDoc, collection, serverTimestamp } from '../firebase.js';
-import { pickImage, openCropper } from '../cropper.js';
+import { pickImage, openCropper } from '../cropper.js?v=2';
 
 guard(u => {
     let banner = '', thumb = '';

@@ -1,6 +1,6 @@
 import { auth, onAuthStateChanged, signOut, scope } from './firebase.js';
-import { ensureProfile } from './profile.js';
-import { mountHeader, earlyHeader, syncNav } from './header.js';
+import { ensureProfile } from './profile.js?v=3';
+import { mountHeader, earlyHeader, syncNav } from './header.js?v=3';
 /* Listeners da página atual: são removidos ao trocar de página sem recarregar. */
 const _off = [];
 export const track = (t, type, fn, o) => { t.addEventListener(type, fn, o); _off.push(() => t.removeEventListener(type, fn, o)) };
@@ -17,14 +17,25 @@ const disableAutocomplete = node => {
 disableAutocomplete(document.documentElement);
 new MutationObserver(records => records.forEach(record => record.addedNodes.forEach(disableAutocomplete)))
   .observe(document.documentElement, { childList: true, subtree: true });
-function syncEntityThemeBackground() {
-  const active = document.documentElement.dataset.palette === 'entidade' && !document.body.classList.contains('obs');
-  let video = document.getElementById('entity-theme-background');
+const THEME_BACKGROUNDS = {
+  entidade: 'img/Padrao.mp4',
+  conchas: 'img/bg_areia.mp4',
+  halloween25: 'img/bg_halloween.mp4',
+  farol: 'img/bg_farol.mp4'
+};
+function syncThemeBackground() {
+  const palette = document.documentElement.dataset.palette;
+  const src = THEME_BACKGROUNDS[palette];
+  const active = src && !document.body.classList.contains('obs');
+  let video = document.getElementById('special-theme-background');
+  document.body.classList.toggle('theme-video-active', !!active);
   if (!active) { video?.remove(); return }
-  if (video) return;
+  if (video?.dataset.palette === palette) return;
+  video?.remove();
   video = document.createElement('video');
-  video.id = 'entity-theme-background';
-  video.src = 'img/Padrao.mp4';
+  video.id = 'special-theme-background';
+  video.dataset.palette = palette;
+  video.src = src;
   video.autoplay = true;
   video.loop = true;
   video.muted = true;
@@ -36,10 +47,10 @@ function syncEntityThemeBackground() {
   video.setAttribute('muted', '');
   video.tabIndex = -1;
   document.body.prepend(video);
-  video.play().catch(error => console.warn('Não foi possível reproduzir o vídeo do tema Entidade do Medo.', error))
+  video.play().catch(error => console.warn(`Não foi possível reproduzir o vídeo do tema ${palette}.`, error))
 }
-new MutationObserver(syncEntityThemeBackground).observe(document.documentElement, { attributes: true, attributeFilter: ['data-palette'] });
-syncEntityThemeBackground();
+new MutationObserver(syncThemeBackground).observe(document.documentElement, { attributes: true, attributeFilter: ['data-palette'] });
+syncThemeBackground();
 export const D = [4, 6, 8, 10, 12, 20], AN = { f: 'Físico', m: 'Mente', e: 'Emoção' };
 const L1 = [["ACROBACIA", "f"], ["APTIDÃO", "m"], ["ATLETISMO", "f"], ["CRIME", "f"], ["DISCIPLINA", "e"], ["ENGANAÇÃO", "e"], ["FURTIVIDADE", "f"], ["INTIMIDAÇÃO", "e"], ["INTUIÇÃO", "e"], ["LUTA", "f"], ["MÁQUINAS", "m"], ["MEDICINA", "m"], ["OCULTISMO", "m"], ["PERCEPÇÃO", "m"], ["PERSUASÃO", "e"], ["PESQUISA", "m"], ["PONTARIA", "f"], ["SOBREVIVÊNCIA", "m"], ["TECNOLOGIA", "m"], ["VIGOR", "f"]];
 const L2 = [["ACROBACIA", "f"], ["ANIMAIS", "e"], ["APTIDÃO", "m"], ["ATLETISMO", "f"], ["BRUXARIA", "m"], ["CARISMA", "e"], ["CRIME", "f"], ["DISCIPLINA", "e"], ["ENGANAÇÃO", "e"], ["FURTIVIDADE", "f"], ["INSPECIONAR", "m"], ["INTIMIDAR", "e"], ["INTUIÇÃO", "e"], ["LUTA", "f"], ["MEDICINA", "m"], ["OFÍCIO", "m"], ["PERCEPÇÃO", "m"], ["PONTARIA", "f"], ["SOBREVIVÊNCIA", "m"], ["VIGOR", "f"]];

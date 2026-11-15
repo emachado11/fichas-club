@@ -1,4 +1,4 @@
-import { guard, page, act, $, blank, err, PERF } from '../common.js';
+import { guard, page, act, $, blank, err, PERF } from '../common.js?v=10';
 import { db, addDoc, collection, serverTimestamp } from '../firebase.js';
 guard(u => {
     let p = 'Executor';

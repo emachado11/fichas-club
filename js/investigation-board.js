@@ -1,5 +1,5 @@
 import { db, addDoc, collection, doc, onSnapshot, updateDoc, writeBatch } from './firebase.js';
-import { esc, err, toast, track } from './common.js';
+import { esc, err, toast, track } from './common.js?v=10';
 
 const BOARD_WIDTH = 5000;
 const BOARD_HEIGHT = 4000;

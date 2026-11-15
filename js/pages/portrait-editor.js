@@ -1,9 +1,9 @@
 /* Editor de layout do portrait de OBS.
    ?c=<campanha>  → layout BASE da campanha (só o mestre)
    ?sheet=<ficha> → layout próprio de uma ficha */
-import { guard, $, esc, toast, err, qs, act, clip, blank, migrate, faceKey } from '../common.js';
+import { guard, $, esc, toast, err, qs, act, clip, blank, migrate, faceKey } from '../common.js?v=10';
 import { db, doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, serverTimestamp } from '../firebase.js';
-import { createPortrait, mergeLayout, DEFAULT, SCHEMA, FONTS, getPath, setPath, clone, upscale, SCREEN } from '../portrait.js';
+import { createPortrait, mergeLayout, DEFAULT, SCHEMA, FONTS, getPath, setPath, clone, upscale, SCREEN } from '../portrait.js?v=2';
 
 const cid = qs('c'), sid = qs('sheet');
 const STATES = [['auto', 'Automático (pelos PV/PD)'], ['main', 'Normal'], ['ferido', 'Ferido'], ['morrendo', 'Morrendo'], ['cansado', 'Cansado'], ['exausto', 'Exausto']];

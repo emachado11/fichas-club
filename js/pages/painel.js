@@ -1,8 +1,8 @@
 /* Início: hero da última campanha + 3 últimas fichas abertas */
-import { guard, page, esc, $ } from '../common.js';
+import { guard, page, esc, $ } from '../common.js?v=10';
 import { db, doc, getDoc, getDocs, collection, query, where } from '../firebase.js';
-import { PRIV } from '../profile.js';
-import { fab, sheetCard, skel } from '../ui.js';
+import { PRIV } from '../profile.js?v=3';
+import { fab, sheetCard, skel } from '../ui.js?v=2';
 
 const ms = x => x?.updated?.toMillis?.() || 0;
 guard(async u => {

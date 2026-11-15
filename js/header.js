@@ -1,8 +1,8 @@
 /* Cabeçalho do site: logo, navegação, amigos, convites e perfil. */
-import { ME, setMe, avatar, unlockEntityTheme, watchFriends, watchFriendRequests, watchInvites, answerFriendRequest, answerInvite } from './profile.js';
-import { esc, toast, err } from './common.js';
+import { ME, setMe, avatar, isFarolThemeUnlocked, unlockEntityTheme, unlockFarolTheme, watchFriends, watchFriendRequests, watchInvites, answerFriendRequest, answerInvite } from './profile.js?v=3';
+import { esc, toast, err } from './common.js?v=10';
 import { scope } from './firebase.js';
-import { watchBrowserNotifications } from './browser-notifications.js';
+import { watchBrowserNotifications } from './browser-notifications.js?v=2';
 
 const IC = {
   home: '<svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10"/></svg>',
@@ -16,6 +16,8 @@ const isOn = k => PAGES[k].includes(location.pathname.split('/').pop().replace('
 const NAV = [['painel.html', 'Início', 'home'], ['fichas.html', 'Fichas', 'sheet'], ['campanhas.html', 'Campanhas', 'camp']];
 let mounted = null, unsubs = [];
 let logoEventActive = false;
+let typedFarolCode = '';
+const FAROL_CODE = 'smil3';
 const LOGO_EVENT_PROGRESS_KEY = 'club-logo-event-progress';
 const LOGO_EVENT_IDS = ['jose', 'diane', 'patrick', 'jose-burned', 'diane-mask', 'devil', 'timeo'];
 const JUMPSCARE_IMAGES = [
@@ -37,12 +39,12 @@ const loadLogoEventProgress = () => {
 };
 let completedLogoEvents = loadLogoEventProgress();
 
-function showAchievement() {
+function showAchievement(icon, title) {
   const popup = document.createElement('div');
   popup.className = 'club-achievement';
   popup.setAttribute('role', 'status');
   popup.setAttribute('aria-live', 'polite');
-  popup.innerHTML = '<span class=club-achievement-icon aria-hidden=true>?</span><span class=club-achievement-copy><small>CONQUISTA DESBLOQUEADA</small><b>A Entidade do Medo reina</b></span>';
+  popup.innerHTML = `<span class=club-achievement-icon aria-hidden=true>${icon}</span><span class=club-achievement-copy><small>CONQUISTA DESBLOQUEADA</small><b>${title}</b></span>`;
   document.body.append(popup);
   requestAnimationFrame(() => popup.classList.add('visible'));
   setTimeout(() => popup.classList.add('leaving'), 5450);
@@ -60,8 +62,25 @@ function recordLogoEvent(id) {
   try { sessionStorage.setItem(LOGO_EVENT_PROGRESS_KEY, '[]') }
   catch (error) { console.warn('Não foi possível reiniciar o progresso dos eventos do logo.', error) }
   unlockEntityTheme(ME?.uid).catch(error => console.warn('Não foi possível sincronizar o desbloqueio do tema Entidade do Medo.', error));
-  showAchievement()
+  showAchievement('?', 'A Entidade do Medo reina')
 }
+
+addEventListener('keydown', event => {
+  const target = event.target;
+  const typing = target?.isContentEditable || target?.closest?.('input, textarea, select, [contenteditable]:not([contenteditable="false"])');
+  if (typing || event.ctrlKey || event.metaKey || event.altKey || event.isComposing || event.repeat) {
+    typedFarolCode = '';
+    return
+  }
+  const key = event.key.toLowerCase();
+  if (key.length !== 1) { typedFarolCode = ''; return }
+  typedFarolCode = (typedFarolCode + key).slice(-FAROL_CODE.length);
+  if (typedFarolCode !== FAROL_CODE) return;
+  typedFarolCode = '';
+  if (isFarolThemeUnlocked()) return;
+  unlockFarolTheme(ME?.uid).catch(error => console.warn('Não foi possível sincronizar o desbloqueio do tema Farol.', error));
+  showAchievement(':)', 'Nos veremos novamente. :)')
+});
 
 function showJumpscare(src, eventId) {
   const overlay = document.createElement('div'), image = document.createElement('img');

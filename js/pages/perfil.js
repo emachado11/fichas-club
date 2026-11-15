@@ -1,9 +1,9 @@
 /* Perfil: foto, nomes, @usuário, aparência, conta e amigos */
-import { track, guard, page, act, $, esc, toast, err, clip, modal, close } from '../common.js';
+import { track, guard, page, act, $, esc, toast, err, clip, modal, close } from '../common.js?v=10';
 import { auth, db, doc, writeBatch, getDoc, getDocs, collection, query, where, deleteField, arrayRemove, updatePassword, verifyBeforeUpdateEmail, reauthenticateWithCredential, reauthenticateWithPopup, deleteUser, GoogleAuthProvider, EmailAuthProvider, sendPasswordResetEmail } from '../firebase.js';
-import { ME, setMe, savePriv, applyTheme, applyPalette, MODES, PALETTES, isEntityThemeUnlocked, clean, validHandle, findUser, sendFriendRequest, answerFriendRequest, removeFriend, watchFriends, watchFriendRequests, avatar, getProfile } from '../profile.js';
-import { pickImage, openCropper } from '../cropper.js';
-import { refreshAvatar } from '../header.js';
+import { ME, setMe, savePriv, applyTheme, applyPalette, MODES, PALETTES, isEntityThemeUnlocked, isFarolThemeUnlocked, clean, validHandle, findUser, sendFriendRequest, answerFriendRequest, removeFriend, watchFriends, watchFriendRequests, avatar, getProfile } from '../profile.js?v=3';
+import { pickImage, openCropper } from '../cropper.js?v=2';
+import { refreshAvatar } from '../header.js?v=3';
 
 async function commitBatches(operations) {
   for (let i = 0; i < operations.length; i += 450) {
@@ -77,9 +77,9 @@ guard(u => {
           ${[
             { id: 'profiles', title: 'Perfis', palettes: ['executor', 'analista', 'vigilante'] },
             { id: 'otherSide', title: 'Elementos do Outro Lado', palettes: ['conhecimento', 'morte', 'sangue', 'energia', 'medo'] },
-            { id: 'special', title: 'Temas Especiais', palettes: ['entidade'] }
+            { id: 'special', title: 'Temas Especiais', palettes: ['conchas', 'halloween25', 'entidade', 'farol'] }
           ].map(group => {
-            const options = group.palettes.filter(k => PALETTES[k] && (k !== 'entidade' || isEntityThemeUnlocked()));
+            const options = group.palettes.filter(k => PALETTES[k] && (k !== 'entidade' || isEntityThemeUnlocked()) && (k !== 'farol' || isFarolThemeUnlocked()));
             return options.length ? `<details class=theme-category data-theme-category=${group.id} ${themeCategoryOpen[group.id] ? 'open' : ''}><summary>${group.title}</summary><div class="themes palettes">${options.map(k => `<button class="th ${document.documentElement.dataset.palette == k ? 'on' : ''}" data-a=palette data-v=${k}><i></i>${PALETTES[k]}</button>`).join('')}</div></details>` : ''
           }).join('')}
         </div></div>

@@ -1,6 +1,6 @@
-import { guard, page, act, $, esc, err, toast } from '../common.js';
+import { guard, page, act, $, esc, err, toast } from '../common.js?v=10';
 import { db, collection, query, where, onSnapshot, getDocs, getDoc, doc, writeBatch, deleteField } from '../firebase.js';
-import { fab } from '../ui.js';
+import { fab } from '../ui.js?v=2';
 
 async function deleteCampaign(id, uid) {
     const [sheets, invites, layout, board, sharedBoard] = await Promise.all([

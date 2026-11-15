@@ -11,10 +11,16 @@ export const sha = async t => [...new Uint8Array(await crypto.subtle.digest('SHA
 export const MODES = { light: 'Claro', dark: 'Escuro' };
 export const ENTITY_THEME_UNLOCK_KEY = 'club-entity-theme-unlocked';
 export const ENTITY_ACHIEVEMENT_ID = 'entity-fear';
-export const PALETTES = { executor: 'Executor', analista: 'Analista', vigilante: 'Vigilante', conhecimento: 'Conhecimento', morte: 'Morte', sangue: 'Sangue', energia: 'Energia', medo: 'Medo', entidade: 'Entidade do Medo' };
+export const FAROL_THEME_UNLOCK_KEY = 'club-farol-theme-unlocked';
+export const FAROL_ACHIEVEMENT_ID = 'farol-reunion';
+export const PALETTES = { executor: 'Executor', analista: 'Analista', vigilante: 'Vigilante', conhecimento: 'Conhecimento', morte: 'Morte', sangue: 'Sangue', energia: 'Energia', medo: 'Medo', conchas: 'Conchas', halloween25: 'Halloween 25', entidade: 'Entidade do Medo', farol: 'Farol' };
 export const isEntityThemeUnlocked = () => {
   if (PRIV.entityThemeUnlocked === true || (Array.isArray(PRIV.achievements) && PRIV.achievements.includes(ENTITY_ACHIEVEMENT_ID))) return true;
   try { return localStorage.getItem(ENTITY_THEME_UNLOCK_KEY) === 'true' } catch { return false }
+};
+export const isFarolThemeUnlocked = () => {
+  if (PRIV.farolThemeUnlocked === true || (Array.isArray(PRIV.achievements) && PRIV.achievements.includes(FAROL_ACHIEVEMENT_ID))) return true;
+  try { return localStorage.getItem(FAROL_THEME_UNLOCK_KEY) === 'true' } catch { return false }
 };
 export const applyTheme = t => { t = MODES[t] ? t : 'dark'; document.documentElement.dataset.theme = t; try { localStorage.theme = t } catch { } };
 export const applyPalette = p => { p = PALETTES[p] ? p : 'executor'; document.documentElement.dataset.palette = p; try { localStorage.palette = p } catch { } };
@@ -82,6 +88,18 @@ export function unlockEntityTheme(uid) {
   const saving = uid ? setDoc(doc(db, 'users', uid), {
     entityThemeUnlocked: true,
     achievements: arrayUnion(ENTITY_ACHIEVEMENT_ID)
+  }, { merge: true }) : Promise.resolve();
+  window.dispatchEvent(new Event('club-theme-unlocked'));
+  return saving
+}
+export function unlockFarolTheme(uid) {
+  try { localStorage.setItem(FAROL_THEME_UNLOCK_KEY, 'true') }
+  catch (error) { console.warn('Não foi possível salvar o desbloqueio do tema Farol.', error) }
+  PRIV.farolThemeUnlocked = true;
+  PRIV.achievements = [...new Set([...(Array.isArray(PRIV.achievements) ? PRIV.achievements : []), FAROL_ACHIEVEMENT_ID])];
+  const saving = uid ? setDoc(doc(db, 'users', uid), {
+    farolThemeUnlocked: true,
+    achievements: arrayUnion(FAROL_ACHIEVEMENT_ID)
   }, { merge: true }) : Promise.resolve();
   window.dispatchEvent(new Event('club-theme-unlocked'));
   return saving
