@@ -1,6 +1,6 @@
 import { track, guard, page, act, qs, $, clip, toast, blank, migrate, err, esc, modal } from '../common.js?v=10';
 import { db, doc, getDoc, onSnapshot, updateDoc, serverTimestamp } from '../firebase.js';
-import { mountSheet } from '../sheet.js?v=9';
+import { mountSheet } from '../sheet.js?v=10';
 const clone = o => JSON.parse(JSON.stringify(o));
 import { trackSheet } from '../profile.js?v=4';
 const id = qs('id'), demo = qs('demo');

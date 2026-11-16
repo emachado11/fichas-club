@@ -1487,3 +1487,11 @@ nav {
     line-height: 1;
     padding: .3em .55em
 }
+/* Contador de perícias ao lado do título */
+.ttl .skc {
+    margin-left: 8px;
+    font-size: .8em;
+    letter-spacing: .02em;
+    opacity: .75;
+    font-variant-numeric: tabular-nums
+}
