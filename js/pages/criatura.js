@@ -7,16 +7,16 @@ const ATTRS = [['f', 'Físico'], ['m', 'Mente'], ['e', 'Emoção']];
 const validStep = value => Number.isInteger(value) && value >= 0 && value < D.length;
 
 guard(async user => {
-    const id = qs('id');
+    const id = qs('id'), catalogId = qs('catalogId'), readOnly = !!catalogId;
     let creature = { name: '', pv: 10, attributes: { f: 0, m: 0, e: 0 }, elements: ['conhecimento'], skills: [], photo: '', actions: [] };
-    if (id) {
+    if (id || catalogId) {
         let snapshot;
-        try { snapshot = await getDoc(doc(db, 'creatures', id)) }
+        try { snapshot = await getDoc(doc(db, readOnly ? 'creatureCatalog' : 'creatures', catalogId || id)) }
         catch (error) {
             page('Criaturas', `<p class=er>Falha ao carregar ficha: ${esc(err(error))}</p><a href=criaturas.html>Voltar às criaturas</a>`, user);
             return
         }
-        if (!snapshot.exists() || snapshot.data().owner !== user.uid) {
+        if (!snapshot.exists() || (!readOnly && snapshot.data().owner !== user.uid)) {
             page('Criaturas', '<p class=er>Ficha não encontrada.</p><a href=criaturas.html>Voltar às criaturas</a>', user);
             return
         }
@@ -31,7 +31,7 @@ guard(async user => {
             actions: actions.map(action => ({ name: String(action.name || ''), description: String(action.description || '') }))
         }
     }
-    page(id ? 'Editar criatura' : 'Nova criatura', `<div id=creature-editor></div>`, user);
+    page(readOnly ? 'Criatura padrão' : id ? 'Editar criatura' : 'Nova criatura', `<div id=creature-editor></div>`, user);
         const dieControl = (step, key) => `<div class=creature-die-control><button class=g data-a=attrStep data-k=${key} data-d=-1 aria-label="Diminuir dado">−</button>${dieIcon(D[step], D[step])}<button class=g data-a=attrStep data-k=${key} data-d=1 aria-label="Aumentar dado">+</button></div>`;
         const skillDieControl = step => `<div class=creature-die-control><button class=g data-a=skillStep data-d=-1 aria-label="Diminuir dado da perícia">−</button>${dieIcon(D[step], D[step])}<button class=g data-a=skillStep data-d=1 aria-label="Aumentar dado da perícia">+</button></div>`;
     const draw = () => {
@@ -43,6 +43,11 @@ guard(async user => {
           <div class=creature-editor-actions><a class="g btn" href=criaturas.html>Voltar</a><button data-a=saveCreature>Salvar ficha</button></div></div>`
     };
     draw();
+    if (readOnly) {
+        $('#creature-editor').insertAdjacentHTML('afterbegin', '<p class=hint>Criatura padrão do app · somente leitura.</p>');
+        $('#creature-editor').querySelectorAll('input,textarea,select,button').forEach(control => { control.disabled = true });
+        $('#creature-editor').querySelectorAll('.creature-add-skill,.creature-remove-skill,.creature-remove-action,[data-a=addAction],[data-a=saveCreature],.creature-upload-button').forEach(control => { control.hidden = true })
+    }
     const syncForm = () => {
         creature.name = $('#creature-name')?.value ?? creature.name;
         const pv = $('#creature-pv')?.value;
@@ -96,6 +101,7 @@ guard(async user => {
         addAction: () => { syncForm(); creature.actions.push({ name: '', description: '' }); draw(); $('#creature-editor .creature-action-card:last-child [data-action-name]')?.focus() },
         removeAction: button => { syncForm(); creature.actions.splice(Number(button.dataset.i), 1); draw() },
         saveCreature: async () => {
+            if (readOnly) return toast('As criaturas padrão não podem ser editadas.', 1);
             syncForm();
             creature.name = creature.name.trim();
             creature.actions = creature.actions.map(action => ({ name: action.name.trim(), description: action.description.trim() })).filter(action => action.name || action.description);

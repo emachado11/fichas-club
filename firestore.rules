@@ -19,6 +19,10 @@ rules_version='2'; service cloud.firestore { match /databases/{d}/documents {
   allow update: if request.auth!=null && resource.data.owner==request.auth.uid && request.resource.data.owner==resource.data.owner;
   allow delete: if request.auth!=null && resource.data.owner==request.auth.uid;
  }
+ match /creatureCatalog/{id} {
+  allow get, list: if request.auth!=null;
+  allow create, update, delete: if false;
+ }
  match /campaigns/{id} { allow read, create: if request.auth!=null;
   allow update: if request.auth!=null && (resource.data.master==request.auth.uid ||
    (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members']) &&
