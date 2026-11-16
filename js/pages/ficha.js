@@ -1,4 +1,4 @@
-import { track, guard, page, act, qs, $, clip, toast, blank, migrate, err, esc, modal } from '../common.js?v=11';
+import { track, guard, page, act, qs, $, clip, toast, blank, migrate, err, esc, modal } from '../common.js?v=12';
 import { db, doc, getDoc, onSnapshot, updateDoc, serverTimestamp } from '../firebase.js';
 import { mountSheet } from '../sheet.js?v=12';
 const clone = o => JSON.parse(JSON.stringify(o));

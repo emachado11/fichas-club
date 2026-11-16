@@ -1,19 +1,20 @@
 /* Cabeçalho do site: logo, navegação, amigos, convites e perfil. */
 import { ME, setMe, avatar, isFarolThemeUnlocked, unlockEntityTheme, unlockFarolTheme, watchFriends, watchFriendRequests, watchInvites, answerFriendRequest, answerInvite } from './profile.js?v=4';
-import { esc, toast, err } from './common.js?v=11';
+import { esc, toast, err } from './common.js?v=12';
 import { scope } from './firebase.js';
 import { watchBrowserNotifications } from './browser-notifications.js?v=2';
 
 const IC = {
   home: '<svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10"/></svg>',
   sheet: '<svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>',
+  creature: '<svg viewBox="0 0 24 24"><path d="M12 3a8 8 0 0 0-5.5 13.8V21h11v-4.2A8 8 0 0 0 12 3Z"/><circle cx="9" cy="11" r="1"/><circle cx="15" cy="11" r="1"/><path d="M10 16h4m-2-2v4"/></svg>',
   camp: '<svg viewBox="0 0 24 24"><path d="M3 20L12 4l9 16zM9 20l3-6 3 6"/></svg>',
   friends: '<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 20c.5-4 3-6 6.5-6s6 2 6.5 6"/><circle cx="17" cy="9" r="2.4"/><path d="M17 14c3 0 4.5 1.8 4.9 5"/></svg>',
   mail: '<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 7 9-7"/></svg>'
 };
-const PAGES = { home: ['painel'], sheet: ['fichas', 'ficha', 'ficha-nova'], camp: ['campanhas', 'campanha', 'campanha-nova', 'convite'] };
+const PAGES = { home: ['painel'], sheet: ['fichas', 'ficha', 'ficha-nova'], creature: ['criaturas', 'criatura'], camp: ['campanhas', 'campanha', 'campanha-nova', 'convite'] };
 const isOn = k => PAGES[k].includes(location.pathname.split('/').pop().replace('.html', ''));
-const NAV = [['painel.html', 'Início', 'home'], ['fichas.html', 'Fichas', 'sheet'], ['campanhas.html', 'Campanhas', 'camp']];
+const NAV = [['painel.html', 'Início', 'home'], ['fichas.html', 'Fichas', 'sheet'], ['campanhas.html', 'Campanhas', 'camp'], ['criaturas.html', 'Criaturas', 'creature']];
 let mounted = null, unsubs = [], menusBound = false;
 let logoEventActive = false;
 let typedFarolCode = '';

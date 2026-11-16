@@ -1,4 +1,4 @@
-import { track, D, AN, SKILLS, MUNDOS, PERF, CAT, TABN, $, esc, modal, close, act, face, faceKey, picHTML, cropCss, small, load, rd, shrink, toast } from './common.js?v=11';
+import { track, D, AN, SKILLS, MUNDOS, PERF, CAT, TABN, $, esc, modal, close, act, face, faceKey, picHTML, cropCss, small, load, rd, shrink, toast } from './common.js?v=12';
 import { dieIcon } from './dice.js?v=7';
 
 /* Tamanho (px) do círculo do editor de enquadramento (estilo Discord) */

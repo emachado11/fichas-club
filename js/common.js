@@ -1,6 +1,6 @@
 import { auth, onAuthStateChanged, signOut, scope } from './firebase.js';
 import { ensureProfile } from './profile.js?v=4';
-import { mountHeader, earlyHeader, syncNav } from './header.js?v=4';
+import { mountHeader, earlyHeader, syncNav } from './header.js?v=5';
 /* Listeners da página atual: são removidos ao trocar de página sem recarregar. */
 const _off = [];
 export const track = (t, type, fn, o) => { t.addEventListener(type, fn, o); _off.push(() => t.removeEventListener(type, fn, o)) };
@@ -210,7 +210,7 @@ if (document.getElementById('app') && !/(^|\/)(index|obs|portrait|portrait-edito
 
 /* ===== Troca de página sem recarregar: o cabeçalho (e tudo fora do conteúdo) fica no lugar =====
    Usa a Navigation API (Chrome/Edge/Safari recentes). Em navegadores sem ela, as páginas carregam normalmente. */
-const ROUTES = new Set(['painel', 'fichas', 'ficha', 'ficha-nova', 'campanhas', 'campanha', 'campanha-nova', 'convite', 'perfil']);
+const ROUTES = new Set(['painel', 'fichas', 'ficha', 'ficha-nova', 'criaturas', 'criatura', 'campanhas', 'campanha', 'campanha-nova', 'convite', 'perfil']);
 const routeOf = u => { const n = (u.pathname.split('/').pop() || '').replace(/\.html$/, ''); return ROUTES.has(n) ? n : null };
 function cleanupPage() {
   _off.splice(0).forEach(f => { try { f() } catch { } });

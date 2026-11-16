@@ -1,0 +1,402 @@
+.creature-toolbar,
+.creature-filters,
+.creature-card,
+.creature-attributes,
+.creature-skill-row,
+.creature-die-control {
+    display: flex;
+    align-items: center;
+    gap: 10px
+}
+
+.creature-toolbar {
+    justify-content: space-between;
+    margin-bottom: 14px
+}
+
+.creature-filters {
+    flex-wrap: wrap;
+    margin-bottom: 16px
+}
+
+.creature-filters input[type=search] {
+    flex: 1 1 220px
+}
+
+.creature-element-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px
+}
+
+.creature-element-options label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    text-transform: capitalize
+}
+
+.creature-image-row {
+    display: flex;
+    align-items: center;
+    gap: 12px
+}
+
+.creature-image-preview {
+    display: grid;
+    place-items: center;
+    flex: 0 0 88px;
+    width: 88px;
+    aspect-ratio: 1;
+    overflow: hidden;
+    border: 1px solid var(--ln);
+    border-radius: 6px;
+    background: var(--in);
+    color: var(--mt);
+    font-size: 12px
+}
+
+.creature-image-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover
+}
+
+.creature-image-fields {
+    display: grid;
+    gap: 8px;
+    flex: 1;
+    min-width: 0
+}
+
+.creature-upload-button {
+    position: relative;
+    width: fit-content;
+    overflow: hidden;
+    cursor: pointer
+}
+
+.creature-upload-button input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer
+}
+
+.creature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 270px), 1fr));
+    gap: 12px
+}
+
+.creature-card {
+    align-items: stretch;
+    justify-content: space-between;
+    min-width: 0;
+    padding: 14px;
+    border: 1px solid var(--ln);
+    border-radius: 6px;
+    background: var(--pn)
+}
+
+.creature-card-main {
+    flex: 1;
+    min-width: 0;
+    color: var(--tx);
+    text-decoration: none
+}
+
+.creature-card-main b,
+.creature-card-main small {
+    display: block;
+    overflow-wrap: anywhere
+}
+
+.creature-card-main b {
+    font: 700 20px Cinzel, serif
+}
+
+.creature-card-main small {
+    margin-top: 5px
+}
+
+.creature-element-label {
+    color: var(--ac2);
+    text-transform: capitalize
+}
+
+.element-chip {
+    --element-color: var(--ac2);
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border: 1px solid color-mix(in srgb, var(--element-color) 70%, transparent);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--element-color) 16%, transparent);
+    color: var(--element-color);
+    font-size: 12px;
+    line-height: 1.4;
+    text-transform: capitalize
+}
+
+.element-chip[data-element=conhecimento] { --element-color: color-mix(in srgb, #d6ac57 75%, white) }
+.element-chip[data-element=morte] { --element-color: color-mix(in srgb, #696969 75%, white) }
+.element-chip[data-element=sangue] { --element-color: color-mix(in srgb, #780006 75%, white) }
+.element-chip[data-element=energia] { --element-color: color-mix(in srgb, #d26dee 75%, white) }
+.element-chip[data-element=medo] { --element-color: color-mix(in srgb, #93bdcc 75%, white) }
+
+.combat-elements .element-chip {
+    border-color: color-mix(in srgb, var(--element-color) 70%, transparent);
+    background: color-mix(in srgb, var(--element-color) 16%, transparent);
+    color: var(--element-color)
+}
+
+.creature-element-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding-top: 3px
+}
+
+.creature-sheet-card {
+    min-width: 0
+}
+
+.creature-sheet-link {
+    color: inherit;
+    text-decoration: none
+}
+
+.creature-sheet-card .scb b {
+    white-space: normal
+}
+
+.creature-sheet-card .scx {
+    z-index: 1
+}
+
+.creature-editor {
+    display: grid;
+    gap: 14px;
+    max-width: 860px;
+    margin: 0 auto
+}
+
+.creature-editor .pn {
+    display: grid;
+    gap: 12px
+}
+
+.creature-editor h3 {
+    margin: 0
+}
+
+.creature-attributes {
+    justify-content: space-around;
+    flex-wrap: wrap
+}
+
+.creature-attribute {
+    display: grid;
+    justify-items: center;
+    gap: 7px;
+    min-width: 90px
+}
+
+.creature-die-control {
+    justify-content: center;
+    min-width: 120px
+}
+
+.creature-die-control .dc {
+    width: 34px;
+    height: 34px;
+    color: var(--ac2)
+}
+
+.creature-die-control button {
+    min-width: 32px;
+    min-height: 32px;
+    padding: 2px 7px
+}
+
+.creature-skill-list {
+    display: grid;
+    gap: 8px
+}
+
+.creature-action-list {
+    display: grid;
+    gap: 8px
+}
+
+.creature-action-card {
+    display: grid;
+    gap: 10px;
+    padding: 12px;
+    border: 1px solid var(--ln);
+    border-radius: 6px;
+    background: var(--in)
+}
+
+.creature-action-card textarea {
+    resize: vertical
+}
+
+.creature-remove-action {
+    justify-self: end
+}
+
+.creature-skill-row input {
+    flex: 1;
+    min-width: 0
+}
+
+.creature-add-skill {
+    justify-self: start;
+    padding: 4px 0;
+    opacity: .8
+}
+
+.creature-editor-actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap
+}
+
+.creature-combat-attrs,
+.creature-combat-skills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 12px;
+    font-size: 14px
+}
+
+.creature-combat-actions {
+    white-space: pre-wrap
+}
+
+.creature-picker-modal {
+    box-sizing: border-box;
+    width: min(760px, 94vw);
+    max-height: min(90vh, 840px);
+    overflow: hidden;
+    grid-template-rows: auto auto auto minmax(0, 1fr) auto
+}
+
+.creature-filter-menu {
+    min-width: 0;
+    padding: 10px;
+    border: 1px solid var(--ln);
+    border-radius: 6px;
+    background: var(--in)
+}
+
+.creature-filter-menu summary {
+    cursor: pointer;
+    font-weight: 600
+}
+
+.creature-picker-filters {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    padding-top: 10px
+}
+
+.creature-picker-filters .row {
+    gap: 8px;
+    min-width: 0
+}
+
+.creature-picker-filters .fld {
+    min-width: 0
+}
+
+.creature-picker-list {
+    min-height: 120px
+}
+
+.creature-combat-editor {
+    display: grid;
+    gap: 14px
+}
+
+.creature-combat-editor h3,
+.creature-combat-editor h4 {
+    margin: 0
+}
+
+.creature-combat-editor section {
+    display: grid;
+    gap: 8px
+}
+
+.creature-combat-editor-modal {
+    box-sizing: border-box;
+    width: min(760px, 94vw);
+    max-height: min(92vh, 900px);
+    align-content: start;
+    overflow-y: auto
+}
+
+.creature-combat-editor-modal .row {
+    align-items: end
+}
+
+.creature-combat-editor-modal .row .fld {
+    min-width: 120px
+}
+
+.creature-combat-editor-modal .element-chip {
+    cursor: pointer
+}
+
+@media(max-width:600px) {
+    #modal:has(.creature-picker-modal) {
+        align-items: end
+    }
+
+    .mb.creature-picker-modal {
+        width: 100%;
+        max-height: 90dvh;
+        padding: 16px max(16px, env(safe-area-inset-left)) calc(16px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-right));
+        border-radius: 12px 12px 0 0
+    }
+
+    .mb.creature-combat-editor-modal {
+        width: 100%;
+        max-height: 94dvh;
+        padding: 16px max(16px, env(safe-area-inset-left)) calc(16px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-right));
+        border-radius: 12px 12px 0 0
+    }
+
+    .creature-picker-filters {
+        grid-template-columns: minmax(0, 1fr)
+    }
+
+    .creature-picker-filters .row {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr))
+    }
+
+    .creature-toolbar {
+        align-items: stretch;
+        flex-direction: column
+    }
+
+    .creature-skill-row {
+        flex-wrap: wrap
+    }
+
+    .creature-skill-row input {
+        flex-basis: calc(100% - 44px)
+    }
+
+    .creature-image-row {
+        align-items: stretch
+    }
+}

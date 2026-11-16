@@ -1,6 +1,6 @@
 /* Editor de enquadramento (mesmo visual das fichas): arraste e use o zoom.
    openCropper(src, { aspect: 1, round: true, out: [256, 256] }) → Promise<dataURL | null> */
-import { $, modal, close, load, jpg, esc } from './common.js?v=11';
+import { $, modal, close, load, jpg, esc } from './common.js?v=12';
 
 export const pickImage = () => new Promise(ok => {
   const f = document.createElement('input'); f.type = 'file'; f.accept = 'image/*';

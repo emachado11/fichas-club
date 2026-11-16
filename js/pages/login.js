@@ -1,5 +1,5 @@
 import { auth, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from '../firebase.js';
-import { $, act } from '../common.js?v=11';
+import { $, act } from '../common.js?v=12';
 const MSG = {
     'auth/invalid-credential': 'E-mail ou senha incorretos.', 'auth/wrong-password': 'E-mail ou senha incorretos.', 'auth/user-not-found': 'E-mail ou senha incorretos.',
     'auth/invalid-email': 'Digite um e-mail válido.', 'auth/missing-password': 'Digite a senha.', 'auth/weak-password': 'A senha precisa ter pelo menos 6 caracteres.',

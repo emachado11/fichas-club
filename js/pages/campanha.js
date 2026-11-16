@@ -1,4 +1,4 @@
-import { track, guard, page, act, qs, $, esc, clip, err, modal, close, face, cropCss, load, rd, shrink, jpg, toast } from '../common.js?v=11';
+import { track, guard, page, act, qs, $, esc, clip, err, modal, close, face, cropCss, load, rd, shrink, jpg, toast, D, AN } from '../common.js?v=12';
 import { db, doc, collection, query, where, onSnapshot, getDoc, getDocs, updateDoc, setDoc, addDoc, deleteDoc, serverTimestamp, arrayRemove, deleteField, writeBatch } from '../firebase.js';
 import { getProfile, findUser, sendInvite, sendFriendRequest, removeFriend, watchFriends, trackCampaign, avatar } from '../profile.js?v=4';
 import { pickImage, openCropper } from '../cropper.js?v=2';
@@ -17,7 +17,7 @@ async function removePlayer(campaignId, playerUid) {
 
 guard(u => {
     U = u; page('', '<div id=ct></div>', u); trackCampaign(u.uid, id);
-    let c, L = [], friends = [], sent = [], people = [], campaignTab = 'jogadores', investigationBoard = null, campaignEdit = null, pendingFriendRemoval = null;
+    let c, L = [], friends = [], sent = [], people = [], campaignTab = 'jogadores', investigationBoard = null, campaignEdit = null, pendingFriendRemoval = null, combatCreatureDraft = null, readCombatCreatureForm = null;
     let sharedNotes = '', personalNotes = '', combat = null, draftCombat = null, combatId = null, combatUnsub = null, draftUnsub = null, featureWatchId = null, noteTimers = {}, startingCombat = false, draftWatchStarted = false, creatureTarget = 'draft', creatureIndex = -1;
     let raf = 0, lastSig = '', lastTab = '', boardLoading = false, mstarted = false;
     /* junta várias atualizações seguidas (fichas, amigos, convites…) em um único desenho */
@@ -146,11 +146,14 @@ guard(u => {
         const creatureCards = (currentCombat?.creatures || []).map((creature, index) => {
             const showInfo = m || visibility.creatureInfo;
             const pv = Math.max(0, Math.min(100, Number(creature.pv || 0) / (Number(creature.pvMax) || 1) * 100));
+            const actionContent = Array.isArray(creature.actions) ? creature.actions.map(action => `<p><b>${esc(action.name)}</b>${action.description ? ` · ${esc(action.description)}` : ''}</p>`).join('') : creature.actions ? `<p style="white-space:pre-wrap">${esc(creature.actions)}</p>` : '';
             const actions = m ? `<div class=combat-creature-actions>
                 <button class=creature-icon data-a=editCreature data-mode=${source} data-i=${index} aria-label="Editar ${esc(creature.name)}" title="Editar"><svg viewBox="0 0 24 24" aria-hidden=true><path d="M4 16.5V20h3.5L19 8.5 15.5 5 4 16.5Z"/><path d="m13.5 7 3.5 3.5"/></svg></button>
                 <button class=creature-icon data-a=removeCreature data-mode=${source} data-i=${index} aria-label="Remover ${esc(creature.name)}" title="Remover"><svg viewBox="0 0 24 24" aria-hidden=true><path d="M4 7h16M9 7V4h6v3m3 0-1 13H7L6 7m4 3v7m4-7v7"/></svg></button>
             </div>` : '';
-            return `<article class=combat-creature>${showInfo && creature.photo ? `<img src="${esc(creature.photo)}" alt="" loading=lazy>` : ''}<div class=combat-creature-body><h4>${esc(creature.name)}</h4>${showInfo ? `<div class=combat-creature-vitals><div class=combat-bar><i style="width:${pv}%"></i></div><span>PV ${creature.pv}/${creature.pvMax}</span>${m ? `<span class=combat-creature-pv-controls><button data-a=enemyStat data-mode=${source} data-i=${index} data-d=-1 aria-label="Diminuir PV de ${esc(creature.name)}">−</button><button data-a=enemyStat data-mode=${source} data-i=${index} data-d=1 aria-label="Aumentar PV de ${esc(creature.name)}">+</button></span>` : ''}</div>${creature.elements?.length ? `<div class=combat-elements>${creature.elements.map(element => `<span>${esc(element)}</span>`).join('')}</div>` : ''}${creature.abilities ? `<div><b>Habilidades</b><p>${esc(creature.abilities)}</p></div>` : ''}${creature.info ? `<div><b>Informações</b><p>${esc(creature.info)}</p></div>` : ''}` : '<p class=hint>As informações deste inimigo estão ocultas.</p>'}</div>${actions}</article>`
+            const attributes = creature.attributes && Object.entries(AN).map(([key, label]) => `${label} d${D[creature.attributes[key]] || D[0]}`).join(' · ');
+            const elements = Array.isArray(creature.elements) ? creature.elements : creature.type ? [creature.type] : [];
+            return `<article class=combat-creature>${showInfo && creature.photo ? `<img src="${esc(creature.photo)}" alt="" loading=lazy>` : ''}<div class=combat-creature-body><h4>${esc(creature.name)}</h4>${showInfo ? `<div class=combat-creature-vitals><div class=combat-bar><i style="width:${pv}%"></i></div><span>PV ${creature.pv}/${creature.pvMax}</span>${m ? `<span class=combat-creature-pv-controls><button data-a=enemyStat data-mode=${source} data-i=${index} data-d=-1 aria-label="Diminuir PV de ${esc(creature.name)}">−</button><button data-a=enemyStat data-mode=${source} data-i=${index} data-d=1 aria-label="Aumentar PV de ${esc(creature.name)}">+</button></span>` : ''}</div>${attributes ? `<p><b>Atributos</b> ${esc(attributes)}</p>` : ''}${creature.skills?.length ? `<p><b>Perícias</b> ${creature.skills.map(skill => `${esc(skill.name)} d${D[skill.die] || D[0]}`).join(' · ')}</p>` : ''}${actionContent ? `<div><b>Ações</b>${actionContent}</div>` : ''}${elements.length ? `<div class=combat-elements>${elements.map(element => `<span class=element-chip data-element="${esc(element)}">${esc(element)}</span>`).join('')}</div>` : ''}${creature.abilities ? `<div><b>Habilidades</b><p>${esc(creature.abilities)}</p></div>` : ''}${creature.info ? `<div><b>Informações</b><p>${esc(creature.info)}</p></div>` : ''}` : '<p class=hint>As informações deste inimigo estão ocultas.</p>'}</div>${actions}</article>`
         }).join('') || '<p class=hint>Nenhum inimigo adicionado.</p>';
         const selectedCount = L.filter(sheet => included.has(sheet.id)).length;
         const combatRoster = (currentCombat?.sheetIds ? L.filter(x => included.has(x.id)) : L).map(x => {
@@ -396,10 +399,10 @@ guard(u => {
             if (!sheetIds.delete(t.dataset.id)) throw new Error('Esta ficha não participa do combate.');
             await updateDoc(combatRef(), { sheetIds: [...sheetIds] })
         },
-        addCreature: () => {
+        addCreature: async () => {
             if (c.master !== u.uid) throw new Error('Somente o mestre pode adicionar inimigos.');
-            if (combat?.active) modalCreature('live');
-            else if (draftCombat) modalCreature('draft');
+            if (combat?.active) await modalCreaturePicker('live');
+            else if (draftCombat) await modalCreaturePicker('draft');
             else throw new Error('Prepare um combate antes de adicionar inimigos.')
         },
         closeCombat: async () => {
@@ -465,6 +468,54 @@ guard(u => {
         const existing = index >= 0 ? state.creatures?.[index] : null;
         if (index >= 0 && !existing) throw new Error('Inimigo não encontrado.');
         creatureTarget = target; creatureIndex = index;
+        if (existing?.attributes || existing?.sourceId) {
+            combatCreatureDraft = {
+                ...existing,
+                attributes: { f: 0, m: 0, e: 0, ...(existing.attributes || {}) },
+                elements: Array.isArray(existing.elements) ? [...existing.elements] : [],
+                skills: (existing.skills || []).map(skill => ({ ...skill })),
+                actions: Array.isArray(existing.actions) ? existing.actions.map(action => ({ ...action })) : existing.actions ? [{ name: 'Ação', description: String(existing.actions) }] : []
+            };
+            const readForm = () => {
+                combatCreatureDraft.name = $('#combat-creature-name').value.trim();
+                combatCreatureDraft.pv = Number($('#combat-creature-pv').value);
+                combatCreatureDraft.pvMax = Number($('#combat-creature-pvmax').value);
+                combatCreatureDraft.photo = $('#combat-creature-photo').value.trim();
+                combatCreatureDraft.attributes = Object.fromEntries([...document.querySelectorAll('[data-combat-attr]')].map(input => [input.dataset.combatAttr, Number(input.value)]));
+                combatCreatureDraft.elements = [...document.querySelectorAll('[data-combat-element]:checked')].map(input => input.value);
+                combatCreatureDraft.skills = [...document.querySelectorAll('[data-combat-skill-name]')].map((input, i) => ({ name: input.value.trim(), die: Number(document.querySelector(`[data-combat-skill-die="${i}"]`)?.value || 0) }));
+                combatCreatureDraft.actions = [...document.querySelectorAll('[data-combat-action-name]')].map((input, i) => ({ name: input.value.trim(), description: document.querySelector(`[data-combat-action-description="${i}"]`)?.value.trim() || '' }));
+                return combatCreatureDraft
+            };
+            readCombatCreatureForm = readForm;
+            const renderEditor = () => {
+                const draft = combatCreatureDraft;
+                modal(`<div class=creature-combat-editor><h3>Editar criatura no combate</h3><div class=row><label class=fld style="flex:1"><span>Nome</span><input id=combat-creature-name maxlength=80 value="${esc(draft.name || '')}"></label><label class=fld style="flex:1"><span>PV atual</span><input id=combat-creature-pv type=number min=0 value="${draft.pv ?? 1}"></label><label class=fld style="flex:1"><span>PV máximo</span><input id=combat-creature-pvmax type=number min=1 value="${draft.pvMax ?? 1}"></label></div><div class=fld><span>Imagem (URL ou arquivo)</span><div class=creature-image-row><div class=creature-image-preview>${draft.photo ? `<img src="${esc(draft.photo)}" alt="Prévia da criatura">` : '<span>Sem imagem</span>'}</div><div class=creature-image-fields><input id=combat-creature-photo value="${esc(draft.photo?.startsWith('data:') ? '' : draft.photo || '')}" placeholder="URL da imagem"><label class="g btn creature-upload-button">Escolher arquivo<input id=combat-creature-file type=file accept="image/*"></label></div></div></div><section><h4>Atributos</h4><div class=creature-attributes>${[['f', 'Físico'], ['m', 'Mente'], ['e', 'Emoção']].map(([key, label]) => `<label class=creature-attribute><b>${label}</b><select data-combat-attr=${key}>${D.map((die, step) => `<option value=${step} ${(draft.attributes[key] || 0) === step ? 'selected' : ''}>d${die}</option>`).join('')}</select></label>`).join('')}</div></section><section><h4>Elementos</h4><div class=creature-element-options>${['conhecimento', 'morte', 'sangue', 'energia', 'medo'].map(element => `<label><input type=checkbox data-combat-element value=${element} ${draft.elements.includes(element) ? 'checked' : ''}> <span class=element-chip data-element=${element}>${element}</span></label>`).join('')}</div></section><section><div class=row style="justify-content:space-between"><h4>Perícias</h4><button class=g data-creature-edit=addSkill aria-label="Adicionar perícia" title="Adicionar perícia">+</button></div><div class=creature-skill-list>${draft.skills.map((skill, i) => `<div class=creature-skill-row><input data-combat-skill-name=${i} maxlength=60 value="${esc(skill.name || '')}" placeholder="Nome da perícia"><select data-combat-skill-die=${i}>${D.map((die, step) => `<option value=${step} ${(skill.die || 0) === step ? 'selected' : ''}>d${die}</option>`).join('')}</select><button class=g data-creature-edit=removeSkill data-i=${i} aria-label="Remover perícia">×</button></div>`).join('')}</div></section><section><div class=row style="justify-content:space-between"><h4>Ações</h4><button class=g data-creature-edit=addAction aria-label="Adicionar ação" title="Adicionar ação">+</button></div><div class=creature-action-list>${draft.actions.map((action, i) => `<article class=creature-action-card><label class=fld><span>Nome da ação</span><input data-combat-action-name=${i} maxlength=80 value="${esc(action.name || '')}"></label><label class=fld><span>Descrição</span><textarea data-combat-action-description=${i} rows=3 maxlength=1200>${esc(action.description || '')}</textarea></label><button class="g creature-remove-action" data-creature-edit=removeAction data-i=${i}>Remover ação</button></article>`).join('')}</div></section><div class=row><button data-a=saveCreature>Salvar no combate</button><button class=g data-a=close>Cancelar</button></div></div>`);
+                const root = $('#modal .mb');
+                root.classList.add('creature-combat-editor-modal');
+                root.onclick = event => {
+                    const button = event.target.closest('[data-creature-edit]');
+                    if (!button) return;
+                    event.preventDefault(); readForm();
+                    const itemIndex = Number(button.dataset.i);
+                    if (button.dataset.creatureEdit === 'addSkill') combatCreatureDraft.skills.push({ name: '', die: 0 });
+                    if (button.dataset.creatureEdit === 'removeSkill') combatCreatureDraft.skills.splice(itemIndex, 1);
+                    if (button.dataset.creatureEdit === 'addAction') combatCreatureDraft.actions.push({ name: '', description: '' });
+                    if (button.dataset.creatureEdit === 'removeAction') combatCreatureDraft.actions.splice(itemIndex, 1);
+                    renderEditor()
+                };
+                root.onchange = event => {
+                    if (event.target.matches('[data-combat-element]') && event.target.checked && root.querySelectorAll('[data-combat-element]:checked').length > 3) { event.target.checked = false; toast('Escolha até 3 elementos.', 1) }
+                    if (event.target.id === 'combat-creature-file') {
+                        const file = event.target.files?.[0]; if (!file) return;
+                        readForm(); rd(file).then(async source => { combatCreatureDraft.photo = shrink(await load(source), source, 512); renderEditor() }).catch(error => toast(err(error), 1))
+                    }
+                }
+            };
+            renderEditor();
+            return
+        }
+        combatCreatureDraft = null; readCombatCreatureForm = null;
         modal(`<h3>${existing ? 'Editar inimigo' : 'Adicionar inimigo'}</h3><label class=fld><span>Nome</span><input id=creature-name maxlength=80 required value="${esc(existing?.name || '')}"></label><div class=row><label class=fld><span>PV atual</span><input id=creature-pv type=number min=0 value="${existing?.pv ?? 10}"></label><label class=fld><span>PV máximo</span><input id=creature-pvmax type=number min=1 value="${existing?.pvMax ?? 10}"></label>${existing ? '' : '<label class=fld><span>Quantidade (até 20)</span><input id=creature-quantity type=number min=1 max=20 value=1></label>'}</div><label class=fld><span>Foto (URL ou arquivo)</span><input id=creature-photo type=text placeholder=https://... value="${esc(existing?.photo || '')}"><input id=creature-file type=file accept=image/*></label><details class=creature-elements><summary>Elementos (escolha de 1 a 3)</summary><div class=creature-element-options>${['conhecimento', 'energia', 'medo', 'morte', 'sangue'].map(x => `<label><input type=checkbox value=${x} data-element ${existing?.elements?.includes(x) ? 'checked' : ''}> ${x}</label>`).join('')}</div></details><label class=fld><span>Habilidades</span><textarea id=creature-abilities rows=3>${esc(existing?.abilities || '')}</textarea></label><label class=fld><span>Informações</span><textarea id=creature-info rows=3>${esc(existing?.info || '')}</textarea></label><div class=row><button data-a=saveCreature>${existing ? 'Salvar alterações' : 'Adicionar'}</button><button class=g data-a=close>Cancelar</button></div>`);
         $('#creature-file').onchange = async () => {
             const file = $('#creature-file').files?.[0]; if (!file) return;
@@ -479,10 +530,40 @@ guard(u => {
         elements.forEach(element => { element.onchange = syncElements })
         syncElements()
     }
+    async function modalCreaturePicker(target = 'draft') {
+        const state = target === 'live' ? combat : draftCombat;
+        if (!state || (target === 'live' && !state.active)) throw new Error('Combate não encontrado.');
+        creatureTarget = target; creatureIndex = -1;
+        const snapshot = await getDocs(query(collection(db, 'creatures'), where('owner', '==', u.uid)));
+        const library = snapshot.docs.map(item => ({ id: item.id, ...item.data() }));
+        modal(`<div class=row style="justify-content:space-between"><h3>Adicionar criatura</h3><a class="g btn" href=criatura.html target=_blank rel=noopener>Nova ficha</a></div><label class=fld><span>Quantidade</span><input id=creature-picker-quantity type=number min=1 max=20 value=1></label><details class=creature-filter-menu><summary>Filtros e ordenação</summary><div class=creature-picker-filters><input id=creature-picker-q type=search placeholder="Buscar criatura…" aria-label="Buscar criatura"><select id=creature-picker-element aria-label="Filtrar por elemento"><option value=todos>Todos os elementos</option>${['conhecimento', 'morte', 'sangue', 'energia', 'medo'].map(element => `<option value=${element}>${element[0].toUpperCase() + element.slice(1)}</option>`).join('')}</select><div class=row><label class=fld><span>PV mínimo</span><input id=creature-picker-min type=number min=0></label><label class=fld><span>PV máximo</span><input id=creature-picker-max type=number min=0></label></div><select id=creature-picker-sort aria-label="Ordenar criaturas"><option value=az>Ordem alfabética</option><option value=pv>PV: menor primeiro</option><option value=pvDesc>PV: maior primeiro</option></select></div></details><div id=creature-picker-list class="catalog-modal-list creature-picker-list"></div><button class=g data-a=close>Fechar</button>`);
+        $('#modal .mb').classList.add('creature-picker-modal');
+        const drawPicker = () => {
+            const q = $('#creature-picker-q').value.trim().toLowerCase(), element = $('#creature-picker-element').value, min = Number($('#creature-picker-min').value) || 0, max = Number($('#creature-picker-max').value) || Infinity, sort = $('#creature-picker-sort').value;
+            const items = library.filter(item => {
+                const elements = Array.isArray(item.elements) ? item.elements : item.type ? [item.type] : [];
+                return (element === 'todos' || elements.includes(element)) && Number(item.pv) >= min && Number(item.pv) <= max && (!q || `${item.name} ${elements.join(' ')}`.toLowerCase().includes(q))
+            });
+            items.sort((a, b) => sort === 'az' ? a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' }) : sort === 'pv' ? a.pv - b.pv : b.pv - a.pv);
+            $('#creature-picker-list').innerHTML = items.map(item => { const elements = Array.isArray(item.elements) ? item.elements : item.type ? [item.type] : []; return `<button class=cat data-a=chooseCreature data-id="${esc(item.id)}"><b>${esc(item.name)}</b><small>${esc(elements.join(' · ') || 'Sem elemento')} · PV ${Number(item.pv) || 0}</small></button>` }).join('') || '<p class=hint>Nenhuma criatura encontrada. Crie uma ficha para começar.</p>'
+        };
+        ['#creature-picker-q', '#creature-picker-element', '#creature-picker-min', '#creature-picker-max', '#creature-picker-sort'].forEach(selector => $(selector).addEventListener(selector.includes('q') ? 'input' : 'change', drawPicker));
+        drawPicker()
+    }
     act({
         saveCreature: async () => {
             const live = creatureTarget === 'live', state = live ? combat : draftCombat;
             if (c.master !== u.uid || !state || (live && !combat?.active)) throw new Error('Somente o mestre pode alterar inimigos.');
+            if (combatCreatureDraft && creatureIndex >= 0) {
+                const updated = readCombatCreatureForm?.();
+                if (!updated || !updated.name || !Number.isSafeInteger(updated.pv) || updated.pv < 0 || !Number.isSafeInteger(updated.pvMax) || updated.pvMax < 1 || updated.elements.length < 1 || updated.elements.length > 3 || !['f', 'm', 'e'].every(key => Number.isInteger(updated.attributes[key]) && updated.attributes[key] >= 0 && updated.attributes[key] < D.length) || updated.skills.some(skill => skill.name && (!Number.isInteger(skill.die) || skill.die < 0 || skill.die >= D.length)) || updated.actions.some(action => !action.name || !action.description)) return toast('Confira PV, atributos, 1 a 3 elementos, perícias e ações.', 1);
+                updated.pv = Math.min(updated.pv, updated.pvMax);
+                updated.skills = updated.skills.filter(skill => skill.name);
+                const creatures = [...state.creatures];
+                creatures[creatureIndex] = { ...state.creatures[creatureIndex], ...updated };
+                await updateDoc(live ? combatRef() : draftRef(), { creatures });
+                combatCreatureDraft = null; readCombatCreatureForm = null; close(); return
+            }
             const name = $('#creature-name').value.trim(), pv = Number($('#creature-pv').value), pvMax = Number($('#creature-pvmax').value), quantity = creatureIndex >= 0 ? 1 : Number($('#creature-quantity').value);
             const elements = [...document.querySelectorAll('[data-element]:checked')].map(input => input.value);
             if (!name || !Number.isFinite(pv) || pv < 0 || !Number.isFinite(pvMax) || pvMax < 1 || !Number.isSafeInteger(quantity) || quantity < 1 || quantity > 20) return toast('Preencha nome, PV válido e uma quantidade de 1 a 20.', 1);
@@ -495,6 +576,20 @@ guard(u => {
             }
             await updateDoc(live ? combatRef() : draftRef(), { creatures });
             close()
+        },
+        chooseCreature: async button => {
+            const live = creatureTarget === 'live', state = live ? combat : draftCombat;
+            if (c.master !== u.uid || !state || (live && !state.active)) throw new Error('Somente o mestre pode adicionar inimigos.');
+            const quantity = Number($('#creature-picker-quantity').value);
+            if (!Number.isSafeInteger(quantity) || quantity < 1 || quantity > 20) return toast('Escolha uma quantidade de 1 a 20.', 1);
+            const snapshot = await getDoc(doc(db, 'creatures', button.dataset.id));
+            if (!snapshot.exists() || snapshot.data().owner !== u.uid) throw new Error('Criatura não encontrada na sua biblioteca.');
+            const template = snapshot.data(), pvMax = Number(template.pv);
+            if (!template.name || !Number.isSafeInteger(pvMax) || pvMax < 1) throw new Error('A ficha desta criatura tem PV inválidos.');
+            const creatures = [...(state.creatures || [])];
+            const elements = Array.isArray(template.elements) ? template.elements : template.type ? [template.type] : [];
+            for (let i = 0; i < quantity; i++) creatures.push({ id: crypto.randomUUID?.() || `${Date.now()}-${i}-${Math.random().toString(36).slice(2)}`, sourceId: snapshot.id, name: template.name, pv: pvMax, pvMax, attributes: { ...template.attributes }, elements: [...elements], skills: (template.skills || []).map(skill => ({ ...skill })), photo: template.photo || '', actions: template.actions || [] });
+            await updateDoc(live ? combatRef() : draftRef(), { creatures }); close()
         }
     })
 });

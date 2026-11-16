@@ -1,4 +1,4 @@
-import { guard, page, err } from '../common.js?v=11';
+import { guard, page, err } from '../common.js?v=12';
 import { db, doc, updateDoc, arrayUnion } from '../firebase.js';
 const c = new URLSearchParams(location.search).get('c');
 guard(async u => {

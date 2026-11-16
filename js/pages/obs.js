@@ -1,5 +1,5 @@
 /* Página do OBS (Fonte de navegador): só o portrait, fundo transparente. */
-import { $, qs, blank, migrate } from '../common.js?v=11';
+import { $, qs, blank, migrate } from '../common.js?v=12';
 import { db, doc, onSnapshot } from '../firebase.js';
 import { createPortrait, dataFromSheet, DEFAULT } from '../portrait.js?v=2';
 document.body.classList.add('obs');

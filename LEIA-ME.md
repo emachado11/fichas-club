@@ -2,7 +2,8 @@
 
 **Depois de atualizar, publique o arquivo `firestore.rules` no Firebase** (Firestore → Regras → colar → Publicar).
 Ele inclui as coleções `profiles`, `usernames`, `users`, `friendRequests`, `friendships`, `invites`,
-`campaigns/{id}/combats`, `campaigns/{id}/combatDrafts` e `campaigns/{id}/notes`. Rascunhos de combate
+`campaigns/{id}/combats`, `campaigns/{id}/combatDrafts`, `campaigns/{id}/notes` e `creatures` (fichas
+privadas ao usuário que as criou). Rascunhos de combate
 são privados ao mestre; ao iniciar, o encontro é publicado aos participantes. O mestre pode editar
 inimigos, escolher fichas participantes, adicioná-las durante o combate e configurar a exibição
 antes de revelar. As anotações pessoais só podem ser lidas por seu autor e as conjuntas pelos
