@@ -1,6 +1,7 @@
-import { guard, page, act, $, qs, esc, err, toast, D, load, rd, shrink } from '../common.js?v=12';
+import { guard, page, act, $, qs, esc, err, toast, D, rd } from '../common.js?v=12';
 import { db, doc, collection, getDoc, setDoc, updateDoc, serverTimestamp } from '../firebase.js';
 import { dieIcon } from '../dice.js?v=7';
+import { openCropper } from '../cropper.js?v=2';
 
 const TYPES = ['conhecimento', 'morte', 'sangue', 'energia', 'medo'];
 const ATTRS = [['f', 'Físico'], ['m', 'Mente'], ['e', 'Emoção']];
@@ -84,7 +85,11 @@ guard(async user => {
         if (event.target.id === 'creature-photo-file') {
             const file = event.target.files?.[0];
             if (!file) return;
-            rd(file).then(async source => { syncForm(); creature.photo = shrink(await load(source), source, 512); draw() }).catch(error => toast(err(error), 1))
+            rd(file).then(async source => {
+                syncForm();
+                const photo = await openCropper(source, { aspect: 1, round: false, out: [384, 384], title: 'Recortar imagem da criatura' });
+                if (photo) { creature.photo = photo; draw() }
+            }).catch(error => toast(err(error), 1))
         }
     });
     act({

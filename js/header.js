@@ -12,7 +12,7 @@ const IC = {
   friends: '<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 20c.5-4 3-6 6.5-6s6 2 6.5 6"/><circle cx="17" cy="9" r="2.4"/><path d="M17 14c3 0 4.5 1.8 4.9 5"/></svg>',
   mail: '<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 7 9-7"/></svg>'
 };
-const PAGES = { home: ['painel'], sheet: ['fichas', 'ficha', 'ficha-nova'], creature: ['criaturas', 'criatura'], camp: ['campanhas', 'campanha', 'campanha-nova', 'convite'] };
+const PAGES = { home: ['painel'], sheet: ['fichas', 'ficha', 'ficha-nova'], creature: ['criaturas', 'criatura', 'criaturas-admin'], camp: ['campanhas', 'campanha', 'campanha-nova', 'convite'] };
 const isOn = k => PAGES[k].includes(location.pathname.split('/').pop().replace('.html', ''));
 const NAV = [['painel.html', 'Início', 'home'], ['fichas.html', 'Fichas', 'sheet'], ['campanhas.html', 'Campanhas', 'camp'], ['criaturas.html', 'Criaturas', 'creature']];
 let mounted = null, unsubs = [], menusBound = false;

@@ -4,6 +4,10 @@ rules_version='2'; service cloud.firestore { match /databases/{d}/documents {
    (get(/databases/$(d)/documents/campaigns/$(id)).data.master==request.auth.uid ||
     request.auth.uid in get(/databases/$(d)/documents/campaigns/$(id)).data.members);
  }
+ function creatureAdmin() {
+  return request.auth!=null &&
+   get(/databases/$(d)/documents/profiles/$(request.auth.uid)).data.admin==true;
+ }
  match /sheets/{id} { allow get: if true;
   allow list: if request.auth!=null &&
    (resource.data.owner==request.auth.uid ||
@@ -21,7 +25,7 @@ rules_version='2'; service cloud.firestore { match /databases/{d}/documents {
  }
  match /creatureCatalog/{id} {
   allow get, list: if request.auth!=null;
-  allow create, update, delete: if false;
+  allow create, update, delete: if creatureAdmin();
  }
  match /campaigns/{id} { allow read, create: if request.auth!=null;
   allow update: if request.auth!=null && (resource.data.master==request.auth.uid ||
@@ -60,7 +64,13 @@ rules_version='2'; service cloud.firestore { match /databases/{d}/documents {
   allow create, update, delete: if request.auth!=null && get(/databases/$(d)/documents/campaigns/$(id)).data.master==request.auth.uid; }
 
  /* Perfil público (nome de exibição, @, foto, hash do e-mail para busca). Qualquer usuário logado lê; só o dono grava. */
- match /profiles/{uid} { allow read: if request.auth!=null; allow create, update, delete: if request.auth!=null && request.auth.uid==uid; }
+ match /profiles/{uid} {
+  allow read: if request.auth!=null;
+  allow create: if request.auth!=null && request.auth.uid==uid && !('admin' in request.resource.data);
+  allow update: if request.auth!=null && request.auth.uid==uid &&
+   !request.resource.data.diff(resource.data).affectedKeys().hasAny(['admin']);
+  allow delete: if request.auth!=null && request.auth.uid==uid;
+ }
  /* @ de usuário único: usernames/{@} -> { uid }. Não pode ser sobrescrito por outra pessoa (update é negado). */
  match /usernames/{h} { allow read: if request.auth!=null;
   allow create: if request.auth!=null && request.resource.data.uid==request.auth.uid;

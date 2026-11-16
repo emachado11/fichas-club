@@ -483,3 +483,113 @@
         align-items: stretch
     }
 }
+
+.creature-admin-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 10px
+}
+
+.creature-admin-actions #creature-admin-link[hidden] {
+    display: none !important
+}
+
+.creature-admin-layout {
+    display: grid;
+    grid-template-columns: minmax(240px, .75fr) minmax(0, 1.5fr);
+    align-items: start;
+    gap: 14px
+}
+
+.creature-admin-list-panel,
+.creature-admin-editor {
+    min-width: 0
+}
+
+.creature-admin-list-head {
+    display: flex;
+    align-items: end;
+    gap: 8px;
+    margin-bottom: 12px
+}
+
+.creature-admin-list-head .fld {
+    flex: 1;
+    min-width: 0
+}
+
+.creature-admin-list {
+    display: grid;
+    gap: 6px;
+    max-height: 72vh;
+    overflow-y: auto;
+    overscroll-behavior: contain
+}
+
+.creature-admin-item {
+    margin: 0;
+    text-align: left
+}
+
+.creature-admin-item b,
+.creature-admin-item small {
+    display: block;
+    overflow-wrap: anywhere
+}
+
+.creature-admin-item.on {
+    border-color: var(--ac2)
+}
+
+.creature-admin-editor {
+    display: grid;
+    gap: 14px
+}
+
+.creature-admin-editor h3,
+.creature-admin-editor h4 {
+    margin: 0
+}
+
+.creature-admin-editor > section {
+    display: grid;
+    gap: 8px
+}
+
+.creature-admin-editor-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px
+}
+
+.creature-admin-editor .creature-attributes {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px
+}
+
+@media(max-width:760px) {
+    .creature-admin-layout {
+        grid-template-columns: minmax(0, 1fr)
+    }
+
+    .creature-admin-list {
+        max-height: 36vh
+    }
+}
+
+@media(max-width:480px) {
+    .creature-admin-list-head {
+        align-items: stretch;
+        flex-direction: column
+    }
+
+    .creature-admin-list-head > button {
+        min-height: 42px
+    }
+
+    .creature-admin-editor .creature-attributes {
+        grid-template-columns: minmax(0, 1fr)
+    }
+}

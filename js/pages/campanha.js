@@ -480,7 +480,7 @@ guard(u => {
                 combatCreatureDraft.name = $('#combat-creature-name').value.trim();
                 combatCreatureDraft.pv = Number($('#combat-creature-pv').value);
                 combatCreatureDraft.pvMax = Number($('#combat-creature-pvmax').value);
-                combatCreatureDraft.photo = $('#combat-creature-photo').value.trim();
+                combatCreatureDraft.photo = $('#combat-creature-photo').value.trim() || combatCreatureDraft.photo;
                 combatCreatureDraft.attributes = Object.fromEntries([...document.querySelectorAll('[data-combat-attr]')].map(input => [input.dataset.combatAttr, Number(input.value)]));
                 combatCreatureDraft.elements = [...document.querySelectorAll('[data-combat-element]:checked')].map(input => input.value);
                 combatCreatureDraft.skills = [...document.querySelectorAll('[data-combat-skill-name]')].map((input, i) => ({ name: input.value.trim(), die: Number(document.querySelector(`[data-combat-skill-die="${i}"]`)?.value || 0) }));
@@ -508,7 +508,10 @@ guard(u => {
                     if (event.target.matches('[data-combat-element]') && event.target.checked && root.querySelectorAll('[data-combat-element]:checked').length > 3) { event.target.checked = false; toast('Escolha até 3 elementos.', 1) }
                     if (event.target.id === 'combat-creature-file') {
                         const file = event.target.files?.[0]; if (!file) return;
-                        readForm(); rd(file).then(async source => { combatCreatureDraft.photo = shrink(await load(source), source, 512); renderEditor() }).catch(error => toast(err(error), 1))
+                        readForm(); rd(file).then(async source => {
+                            const photo = await openCropper(source, { aspect: 1, round: false, out: [384, 384], title: 'Recortar imagem da criatura' });
+                            if (photo) { combatCreatureDraft.photo = photo; renderEditor() }
+                        }).catch(error => toast(err(error), 1))
                     }
                 }
             };
@@ -519,7 +522,11 @@ guard(u => {
         modal(`<h3>${existing ? 'Editar inimigo' : 'Adicionar inimigo'}</h3><label class=fld><span>Nome</span><input id=creature-name maxlength=80 required value="${esc(existing?.name || '')}"></label><div class=row><label class=fld><span>PV atual</span><input id=creature-pv type=number min=0 value="${existing?.pv ?? 10}"></label><label class=fld><span>PV máximo</span><input id=creature-pvmax type=number min=1 value="${existing?.pvMax ?? 10}"></label>${existing ? '' : '<label class=fld><span>Quantidade (até 20)</span><input id=creature-quantity type=number min=1 max=20 value=1></label>'}</div><label class=fld><span>Foto (URL ou arquivo)</span><input id=creature-photo type=text placeholder=https://... value="${esc(existing?.photo || '')}"><input id=creature-file type=file accept=image/*></label><details class=creature-elements><summary>Elementos (escolha de 1 a 3)</summary><div class=creature-element-options>${['conhecimento', 'energia', 'medo', 'morte', 'sangue'].map(x => `<label><input type=checkbox value=${x} data-element ${existing?.elements?.includes(x) ? 'checked' : ''}> ${x}</label>`).join('')}</div></details><label class=fld><span>Habilidades</span><textarea id=creature-abilities rows=3>${esc(existing?.abilities || '')}</textarea></label><label class=fld><span>Informações</span><textarea id=creature-info rows=3>${esc(existing?.info || '')}</textarea></label><div class=row><button data-a=saveCreature>${existing ? 'Salvar alterações' : 'Adicionar'}</button><button class=g data-a=close>Cancelar</button></div>`);
         $('#creature-file').onchange = async () => {
             const file = $('#creature-file').files?.[0]; if (!file) return;
-            try { const source = await rd(file); $('#creature-photo').value = shrink(await load(source), source, 256) }
+            try {
+                const source = await rd(file);
+                const photo = await openCropper(source, { aspect: 1, round: false, out: [384, 384], title: 'Recortar imagem da criatura' });
+                if (photo) $('#creature-photo').value = photo
+            }
             catch (x) { toast(err(x), 1) }
         }
         const elements = [...document.querySelectorAll('[data-element]')];

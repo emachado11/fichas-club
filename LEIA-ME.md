@@ -4,16 +4,19 @@
 Ele inclui as coleções `profiles`, `usernames`, `users`, `friendRequests`, `friendships`, `invites`,
 `campaigns/{id}/combats`, `campaigns/{id}/combatDrafts`, `campaigns/{id}/notes` e `creatures` (fichas
 privadas ao usuário que as criou), além de `creatureCatalog` (catálogo padrão, leitura para usuários
-autenticados e gravação somente pelo Firebase Console/Admin SDK). Rascunhos de combate
+autenticados e gravação somente por administradores habilitados). Rascunhos de combate
 são privados ao mestre; ao iniciar, o encontro é publicado aos participantes. O mestre pode editar
 inimigos, escolher fichas participantes, adicioná-las durante o combate e configurar a exibição
 antes de revelar. As anotações pessoais só podem ser lidas por seu autor e as conjuntas pelos
 participantes da campanha.
 Erros de permissão podem indicar uma regra que negou a operação, não necessariamente que as regras não foram publicadas.
 
-Para cadastrar criaturas padrão, crie documentos em `creatureCatalog` com ID estável e os campos
-`name`, `pv`, `attributes`, `elements`, `skills`, `photo` e `actions`, no mesmo formato das fichas
-pessoais. A interface não pode gravar nessa coleção; use o Firebase Console ou Admin SDK para publicar o catálogo.
+Para habilitar o gerenciamento do catálogo, abra o perfil existente em `profiles/{UID}` no Firebase
+Console e defina `admin` como `true` (use `false` para remover o acesso). As regras impedem que o
+próprio usuário altere esse campo pelo app. O administrador verá **Gerenciar catálogo padrão** na
+página Criaturas; por lá poderá criar, editar e excluir documentos de `creatureCatalog`.
+Os documentos usam os campos `name`, `pv`, `attributes`, `elements`, `skills`, `photo` e `actions`,
+no mesmo formato das fichas pessoais. Publique as regras do Firestore depois de atualizá-las.
 
 Arquivos novos: `perfil.html`, `css/app.css`, `img/logo.png`, `js/header.js`, `js/profile.js`, `js/ui.js`, `js/cropper.js`, `js/theme.js`, `js/pages/perfil.js`.
 
