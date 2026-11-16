@@ -1508,6 +1508,22 @@ html[data-theme=light] .ib {
   border-radius: 6px
 }
 
+.combat-action-details {
+  padding: 5px 0;
+  border-top: 1px solid var(--ln)
+}
+
+.combat-action-details summary {
+  color: var(--ac2);
+  cursor: pointer;
+  font-weight: 600
+}
+
+.combat-action-description {
+  margin: 5px 0 0;
+  white-space: pre-line
+}
+
 .combat-creature-body {
   display: grid;
   align-content: start;

@@ -181,6 +181,25 @@ guard(u => {
    ${[['jogadores', 'JOGADORES'], ['investigacao', 'INVESTIGAÇÃO'], ['combate', 'COMBATE'], ['importantes', 'IMPORTANTES']].map(([key, label]) => `<button type=button role=tab data-a=campaignTab data-tab=${key} aria-selected="${campaignTab === key}" class="${campaignTab === key ? 'on' : ''}">${label}</button>`).join('')}
   </div>
   <section class="campaign-tab-panel ${campaignTab === 'investigacao' ? 'campaign-board-panel' : ''}">${campaignTab === 'jogadores' ? playersContent : campaignTab === 'investigacao' ? '<div id=investigation-board></div>' : campaignTab === 'combate' ? combatContent : notesContent}</section>`;
+        if (campaignTab === 'combate') {
+            document.querySelectorAll('#ct .combat-creature-body').forEach(body => {
+                const children = [...body.children], heading = body.querySelector('h4'), vitals = body.querySelector('.combat-creature-vitals');
+                if (!vitals) return;
+                const elements = children.find(child => child.classList.contains('combat-elements'));
+                const attributes = children.find(child => child.tagName === 'P' && child.querySelector('b')?.textContent === 'Atributos');
+                const skills = children.find(child => child.tagName === 'P' && child.querySelector('b')?.textContent === 'Perícias');
+                const actions = children.find(child => child.tagName === 'DIV' && child.querySelector(':scope > b')?.textContent === 'Ações');
+                if (actions) [...actions.querySelectorAll(':scope > p')].forEach(paragraph => {
+                    const title = paragraph.querySelector('b')?.textContent.trim() || 'Ação';
+                    const description = paragraph.querySelector('b') ? paragraph.textContent.slice(title.length).replace(/^\s*[·:]?\s*/, '') : paragraph.textContent;
+                    const details = document.createElement('details'), summary = document.createElement('summary'), text = document.createElement('p');
+                    details.className = 'combat-action-details'; summary.textContent = title; text.className = 'combat-action-description'; text.textContent = description;
+                    details.append(summary, text); paragraph.replaceWith(details)
+                });
+                const ordered = [heading, vitals, elements, attributes, skills, actions, ...children.filter(child => ![heading, vitals, elements, attributes, skills, actions].includes(child))];
+                ordered.filter(Boolean).forEach(child => body.append(child))
+            })
+        }
         for (const [key, selector] of [['iq', '#iq'], ['shared', '#shared-notes'], ['personal', '#personal-notes']]) {
             const input = $(selector), saved = keep[key];
             if (input && saved) { input.value = saved.v; if (saved.f) { input.focus(); try { input.setSelectionRange(saved.s, saved.s) } catch { } } }
@@ -436,8 +455,7 @@ guard(u => {
             if (!state || (live && !state.active) || !Number.isSafeInteger(index)) throw new Error('Inimigo não encontrado.');
             const enemy = state.creatures?.[index];
             if (!enemy) throw new Error('Inimigo não encontrado.');
-            const pvMax = Math.max(1, Number(enemy.pvMax) || 1);
-            const pv = Math.max(0, Math.min(pvMax, Number(enemy.pv || 0) + Number(t.dataset.d)));
+            const pv = Math.max(0, Number(enemy.pv || 0) + Number(t.dataset.d));
             if (pv === enemy.pv) return;
             const creatures = [...state.creatures];
             creatures[index] = { ...enemy, pv };
@@ -570,7 +588,6 @@ guard(u => {
             if (combatCreatureDraft && creatureIndex >= 0) {
                 const updated = readCombatCreatureForm?.();
                 if (!updated || !updated.name || !Number.isSafeInteger(updated.pv) || updated.pv < 0 || !Number.isSafeInteger(updated.pvMax) || updated.pvMax < 1 || updated.elements.length < 1 || updated.elements.length > 3 || !['f', 'm', 'e'].every(key => Number.isInteger(updated.attributes[key]) && updated.attributes[key] >= 0 && updated.attributes[key] < D.length) || updated.skills.some(skill => skill.name && (!Number.isInteger(skill.die) || skill.die < 0 || skill.die >= D.length)) || updated.actions.some(action => !action.name || !action.description)) return toast('Confira PV, atributos, 1 a 3 elementos, perícias e ações.', 1);
-                updated.pv = Math.min(updated.pv, updated.pvMax);
                 updated.skills = updated.skills.filter(skill => skill.name);
                 const creatures = [...state.creatures];
                 creatures[creatureIndex] = { ...state.creatures[creatureIndex], ...updated };
