@@ -52,8 +52,12 @@ function syncThemeBackground() {
 new MutationObserver(syncThemeBackground).observe(document.documentElement, { attributes: true, attributeFilter: ['data-palette'] });
 syncThemeBackground();
 export const D = [4, 6, 8, 10, 12, 20], AN = { f: 'Físico', m: 'Mente', e: 'Emoção' };
-const L1 = [["ACROBACIA", "f"], ["APTIDÃO", "m"], ["ATLETISMO", "f"], ["CRIME", "f"], ["DISCIPLINA", "e"], ["ENGANAÇÃO", "e"], ["FURTIVIDADE", "f"], ["INTIMIDAÇÃO", "e"], ["INTUIÇÃO", "e"], ["LUTA", "f"], ["MÁQUINAS", "m"], ["MEDICINA", "m"], ["OCULTISMO", "m"], ["PERCEPÇÃO", "m"], ["PERSUASÃO", "e"], ["PESQUISA", "m"], ["PONTARIA", "f"], ["SOBREVIVÊNCIA", "m"], ["TECNOLOGIA", "m"], ["VIGOR", "f"]];
-const L2 = [["ACROBACIA", "f"], ["ANIMAIS", "e"], ["APTIDÃO", "m"], ["ATLETISMO", "f"], ["BRUXARIA", "m"], ["CARISMA", "e"], ["CRIME", "f"], ["DISCIPLINA", "e"], ["ENGANAÇÃO", "e"], ["FURTIVIDADE", "f"], ["INSPECIONAR", "m"], ["INTIMIDAR", "e"], ["INTUIÇÃO", "e"], ["LUTA", "f"], ["MEDICINA", "m"], ["OFÍCIO", "m"], ["PERCEPÇÃO", "m"], ["PONTARIA", "f"], ["SOBREVIVÊNCIA", "m"], ["VIGOR", "f"]];
+/* Aptidão é uma perícia separada para cada área (cada uma com o seu próprio dado), e as áreas mudam conforme o mundo. */
+const APT = { moderno: ['Artes', 'Atualidades', 'Burocracia', 'Exatas', 'Humanas', 'Tática'], medieval: ['Artes', 'Erudição', 'Folclore', 'Guerra', 'Nobreza', 'Religião'] };
+const aptName = d => `APTIDÃO (${d.toUpperCase()})`;
+const apt = w => APT[w].map(d => [aptName(d), "m"]);
+const L1 = [["ACROBACIA", "f"], ...apt('moderno'), ["ATLETISMO", "f"], ["CRIME", "f"], ["DISCIPLINA", "e"], ["ENGANAÇÃO", "e"], ["FURTIVIDADE", "f"], ["INTIMIDAÇÃO", "e"], ["INTUIÇÃO", "e"], ["LUTA", "f"], ["MÁQUINAS", "m"], ["MEDICINA", "m"], ["OCULTISMO", "m"], ["PERCEPÇÃO", "m"], ["PERSUASÃO", "e"], ["PESQUISA", "m"], ["PONTARIA", "f"], ["SOBREVIVÊNCIA", "m"], ["TECNOLOGIA", "m"], ["VIGOR", "f"]];
+const L2 = [["ACROBACIA", "f"], ["ANIMAIS", "e"], ...apt('medieval'), ["ATLETISMO", "f"], ["BRUXARIA", "m"], ["CARISMA", "e"], ["CRIME", "f"], ["DISCIPLINA", "e"], ["ENGANAÇÃO", "e"], ["FURTIVIDADE", "f"], ["INSPECIONAR", "m"], ["INTIMIDAR", "e"], ["INTUIÇÃO", "e"], ["LUTA", "f"], ["MEDICINA", "m"], ["OFÍCIO", "m"], ["PERCEPÇÃO", "m"], ["PONTARIA", "f"], ["SOBREVIVÊNCIA", "m"], ["VIGOR", "f"]];
 /* Perícias por mundo. O valor de cada perícia é guardado pelo NOME (s.sk[nome] = índice do dado). */
 export const SKILLS = { moderno: L1, medieval: L2 };
 export const MUNDOS = { moderno: 'Moderno', medieval: 'Medieval' };
@@ -119,6 +123,12 @@ export function migrate(s) {
   }
   const ks = Object.keys(s.sk || {});
   if (ks.length && ks.every(k => /^\d+$/.test(k))) { const n = {}; ks.forEach(k => (LEG[+k] || []).forEach(nm => n[nm] = s.sk[k])); s.sk = n } else s.sk = s.sk || {};
+  /* Antes: uma única perícia APTIDÃO + dropdown de área. Agora: uma perícia por área. O dado antigo vai para a área escolhida em cada mundo (no outro mundo só se a área não aparecer também no mundo atual, para não duplicar o dado). */
+  if (s.sk.APTIDÃO !== undefined || s.skillInfo.APTIDÃO !== undefined) {
+    const v = s.sk.APTIDÃO;
+    if (v) for (const w in APT) { const d = APT[w].includes(s.skillInfo.APTIDÃO) ? s.skillInfo.APTIDÃO : APT[w][0]; if (w === s.mundo || !APT[s.mundo].includes(d)) s.sk[aptName(d)] ??= v }
+    delete s.sk.APTIDÃO; delete s.skillInfo.APTIDÃO
+  }
   return s
 }
 /* Prioridade das imagens de estado: Morrendo > Ferido > Exausto > Cansado. Vale o primeiro estado que se aplica E tem imagem; senão, a principal. */

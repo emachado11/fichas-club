@@ -1,7 +1,7 @@
 /* Editor de layout do portrait de OBS.
    ?c=<campanha>  → layout BASE da campanha (só o mestre)
    ?sheet=<ficha> → layout próprio de uma ficha */
-import { guard, $, esc, toast, err, qs, act, clip, blank, migrate, faceKey } from '../common.js?v=10';
+import { guard, $, esc, toast, err, qs, act, clip, blank, migrate, faceKey } from '../common.js?v=11';
 import { db, doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, serverTimestamp } from '../firebase.js';
 import { createPortrait, mergeLayout, DEFAULT, SCHEMA, FONTS, getPath, setPath, clone, upscale, SCREEN } from '../portrait.js?v=2';
 

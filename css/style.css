@@ -578,9 +578,8 @@ nav a.on {
 }
 
 .sk-name>span {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap
+    overflow-wrap: anywhere;
+    line-height: 1.15
 }
 
 .sk-name select.skill-detail {

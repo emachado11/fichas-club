@@ -1,4 +1,4 @@
-import { guard, page, act, $, esc, err, toast } from '../common.js?v=10';
+import { guard, page, act, $, esc, err, toast } from '../common.js?v=11';
 import { db, collection, query, where, onSnapshot, deleteDoc, doc } from '../firebase.js';
 import { PRIV, savePriv } from '../profile.js?v=4';
 import { fab, sheetCard, skel } from '../ui.js?v=2';

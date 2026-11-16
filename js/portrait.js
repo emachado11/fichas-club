@@ -1,5 +1,5 @@
 /* Portrait de OBS: modelo do layout + renderizador (usado pelo editor e pela página do OBS). */
-import { faceKey, cropCss } from './common.js?v=10';
+import { faceKey, cropCss } from './common.js?v=11';
 
 export const FONTS = ['Cinzel', 'Crimson Pro', 'Orbitron', 'Rajdhani', 'Bebas Neue', 'Oswald', 'Playfair Display', 'Special Elite', 'Share Tech Mono', 'VT323', 'Press Start 2P', 'Metal Mania', 'Creepster', 'IM Fell English', 'Inter'];
 const ONE = ['Bebas Neue', 'Special Elite', 'VT323', 'Press Start 2P', 'Metal Mania', 'Creepster', 'IM Fell English']; // fontes de um único peso

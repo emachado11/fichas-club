@@ -1,13 +1,9 @@
-import { track, D, AN, SKILLS, MUNDOS, PERF, CAT, TABN, $, esc, modal, close, act, face, faceKey, picHTML, cropCss, small, load, rd, shrink, toast } from './common.js?v=10';
+import { track, D, AN, SKILLS, MUNDOS, PERF, CAT, TABN, $, esc, modal, close, act, face, faceKey, picHTML, cropCss, small, load, rd, shrink, toast } from './common.js?v=11';
 import { dieIcon } from './dice.js?v=7';
 
 /* Tamanho (px) do círculo do editor de enquadramento (estilo Discord) */
 const RING = 260;
 const SKILL_DETAILS = {
-    APTIDÃO: {
-        moderno: ['Artes', 'Atualidades', 'Burocracia', 'Exatas', 'Humanas', 'Tática'],
-        medieval: ['Artes', 'Erudição', 'Folclore', 'Guerra', 'Nobreza', 'Religião']
-    },
     OFÍCIO: ['Alquimía', 'Carpintaria', 'Metalurgia']
 };
 const skillDetails = (skill, world) => {

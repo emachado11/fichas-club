@@ -1,5 +1,5 @@
 /* Componentes compartilhados: botão + flutuante e card de ficha. */
-import { esc, face } from './common.js?v=10';
+import { esc, face } from './common.js?v=11';
 
 /* items: [{href,label}] → 1 item: botão + direto; vários: botão + abre um menu para cima */
 export const fab = items => items.length === 1

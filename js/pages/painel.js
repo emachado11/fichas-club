@@ -1,5 +1,5 @@
 /* Início: hero da última campanha + 3 últimas fichas abertas */
-import { guard, page, esc, $ } from '../common.js?v=10';
+import { guard, page, esc, $ } from '../common.js?v=11';
 import { db, doc, getDoc, getDocs, collection, query, where } from '../firebase.js';
 import { PRIV } from '../profile.js?v=4';
 import { fab, sheetCard, skel } from '../ui.js?v=2';
