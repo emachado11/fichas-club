@@ -515,8 +515,52 @@
     }
 
     .creature-picker-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: minmax(0, 1fr);
         gap: 8px
+    }
+
+    .creature-picker-card-select {
+        display: grid;
+        grid-template-columns: 76px minmax(0, 1fr);
+        align-items: stretch
+    }
+
+    .creature-picker-card .scp {
+        width: 76px;
+        aspect-ratio: 1;
+        font-size: 30px
+    }
+
+    .creature-picker-card .scp img {
+        object-position: center;
+        object-fit: cover
+    }
+
+    .creature-picker-card-select .scb {
+        min-width: 0;
+        padding: 8px 10px;
+        border-top: 0;
+        border-left: 3px solid var(--c, var(--ac))
+    }
+
+    .creature-picker-card .scb b,
+    .creature-picker-card .scb small {
+        white-space: normal;
+        overflow-wrap: anywhere
+    }
+
+    .creature-picker-card .creature-element-list {
+        gap: 4px;
+        padding-top: 4px
+    }
+
+    .creature-picker-card .element-chip {
+        white-space: normal
+    }
+
+    .creature-picker-card .scs {
+        gap: 4px;
+        font-size: 12px
     }
 
     .creature-picker-filters .row {
