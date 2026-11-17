@@ -297,7 +297,9 @@
     height: min(80vh, 760px);
     max-height: 84vh;
     overflow: hidden;
-    grid-template-rows: auto auto auto auto auto minmax(0, 1fr) auto
+    display: flex;
+    flex-direction: column;
+    gap: 8px
 }
 
 .creature-picker-head h3 {
@@ -327,6 +329,7 @@
     grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
     align-content: start;
     gap: 10px;
+    flex: 1 1 0;
     min-height: 0;
     overflow-y: auto;
     overscroll-behavior: contain;
@@ -334,14 +337,16 @@
 }
 
 .creature-picker-card {
-    min-width: 0
+    min-width: 0;
+    height: auto
 }
 
 .creature-picker-card-select {
     display: flex;
     flex-direction: column;
     width: 100%;
-    height: 100%;
+    height: auto;
+    min-height: 100%;
     padding: 0;
     overflow: hidden;
     border: 0;
@@ -478,8 +483,8 @@
 
     .mb.creature-picker-modal {
         width: 100%;
-        height: 92dvh;
-        max-height: 92dvh;
+        height: calc(100dvh - 16px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+        max-height: calc(100dvh - 16px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
         padding: 16px max(16px, env(safe-area-inset-left)) calc(16px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-right));
         border-radius: 12px 12px 0 0
     }
@@ -521,14 +526,16 @@
 
     .creature-picker-card-select {
         display: grid;
-        grid-template-columns: 76px minmax(0, 1fr);
-        align-items: stretch
+        grid-template-columns: 56px minmax(0, 1fr);
+        align-items: stretch;
+        height: auto;
+        min-height: 0
     }
 
     .creature-picker-card .scp {
-        width: 76px;
+        width: 56px;
         aspect-ratio: 1;
-        font-size: 30px
+        font-size: 24px
     }
 
     .creature-picker-card .scp img {
@@ -538,7 +545,7 @@
 
     .creature-picker-card-select .scb {
         min-width: 0;
-        padding: 8px 10px;
+        padding: 6px 8px;
         border-top: 0;
         border-left: 3px solid var(--c, var(--ac))
     }
@@ -555,7 +562,9 @@
     }
 
     .creature-picker-card .element-chip {
-        white-space: normal
+        white-space: normal;
+        padding: 1px 6px;
+        font-size: 11px
     }
 
     .creature-picker-card .scs {
